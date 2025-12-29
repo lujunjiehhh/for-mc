@@ -60,11 +60,18 @@ public class BlueprintRenderer {
                 continue;
             }
 
-            drawBezier(guiGraphics, outPos[0], outPos[1], inPos[0], inPos[1], 0xAAFFFFFF); // Slightly transparent for better look
+            drawBezier(guiGraphics, outPos[0], outPos[1], inPos[0], inPos[1], 0xAAFFFFFF, zoom); // Slightly transparent for better look
         }
     }
 
-    public static void drawBezier(GuiGraphics guiGraphics, float x1, float y1, float x2, float y2, int color) {
+    public static void drawBezier(GuiGraphics guiGraphics, float x1, float y1, float x2, float y2, int color, float zoom) {
+        // LOD for connections
+        if (zoom < 0.15f) {
+            // Straight line for very far zoom
+            drawLine(guiGraphics, x1, y1, x2, y2, color);
+            return;
+        }
+
         float dist = Math.abs(x2 - x1) * 0.5f;
         if (dist < 20) dist = 20;
         
@@ -73,9 +80,10 @@ public class BlueprintRenderer {
         float cp2x = x2 - dist;
         float cp2y = y2;
 
-        // Dynamic segments based on distance for performance
+        // Dynamic segments based on distance and zoom
         float pixelDist = (float) Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
-        int segments = Math.max(10, Math.min(30, (int)(pixelDist / 10)));
+        int maxSegments = zoom > 0.4f ? 30 : 12;
+        int segments = Math.max(4, Math.min(maxSegments, (int)(pixelDist / (zoom > 0.4f ? 10 : 25))));
         
         float lastX = x1;
         float lastY = y1;

@@ -109,13 +109,24 @@ public class GuiNode {
         if (sizeDirty) {
             updateSize(font);
         }
-        // Shadow
-        guiGraphics.fill((int) x + 2, (int) y + 2, (int) (x + width + 2), (int) (y + height + 2), 0x88000000);
+
+        // LOD 3: Minimal rendering for very far zoom
+        if (zoom < 0.1f) {
+            guiGraphics.fill((int) x, (int) y, (int) (x + width), (int) (y + height), color);
+            // Draw a slightly darker border
+            guiGraphics.renderOutline((int) x, (int) y, (int) width, (int) height, 0x88000000);
+            return;
+        }
+
+        // Shadow - skip if zooming out significantly
+        if (zoom > 0.4f) {
+            guiGraphics.fill((int) x + 2, (int) y + 2, (int) (x + width + 2), (int) (y + height + 2), 0x88000000);
+        }
         
         // Background
         guiGraphics.fill((int) x, (int) y, (int) (x + width), (int) (y + height), 0xEE1A1A1A);
         
-        // Border (highlighted if mouse is over)
+        // Border
         double worldMouseX = (mouseX - panX) / zoom;
         double worldMouseY = (mouseY - panY) / zoom;
         boolean isHovered = worldMouseX >= x && worldMouseX <= x + width && worldMouseY >= y && worldMouseY <= y + height;
@@ -125,17 +136,22 @@ public class GuiNode {
         // Header
         guiGraphics.fill((int) x + 1, (int) y + 1, (int) (x + width - 1), (int) (y + headerHeight), color);
         
-        // Title
-        guiGraphics.drawString(font, title, (int) x + 5, (int) y + 4, 0xFFFFFFFF, true);
+        // Title - hide if too small
+        if (zoom > 0.2f) {
+            guiGraphics.drawString(font, title, (int) x + 5, (int) y + 4, 0xFFFFFFFF, zoom > 0.5f);
+        }
 
+        // LOD 2: No ports labels, just shapes if zoom > 0.2
+        // LOD 1: No input fields if zoom < 0.5
+        
         // Render Inputs
         for (int i = 0; i < inputs.size(); i++) {
-            renderPort(guiGraphics, font, inputs.get(i), (int) x, (int) (y + headerHeight + 10 + i * 15), true, connections, focusedNode, focusedPort);
+            renderPort(guiGraphics, font, inputs.get(i), (int) x, (int) (y + headerHeight + 10 + i * 15), true, connections, focusedNode, focusedPort, zoom);
         }
 
         // Render Outputs
         for (int i = 0; i < outputs.size(); i++) {
-            renderPort(guiGraphics, font, outputs.get(i), (int) (x + width), (int) (y + headerHeight + 10 + i * 15), false, connections, focusedNode, focusedPort);
+            renderPort(guiGraphics, font, outputs.get(i), (int) (x + width), (int) (y + headerHeight + 10 + i * 15), false, connections, focusedNode, focusedPort, zoom);
         }
     }
 
@@ -153,104 +169,115 @@ public class GuiNode {
         }
     }
 
-    private void renderPort(GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, NodePort port, int px, int py, boolean isInput, List<GuiConnection> connections, GuiNode focusedNode, String focusedPort) {
+    private void renderPort(GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, NodePort port, int px, int py, boolean isInput, List<GuiConnection> connections, GuiNode focusedNode, String focusedPort, float zoom) {
         int color = getPortColor(port);
         boolean isConnected = false;
-        for (GuiConnection conn : connections) {
-            if (isInput) {
-                if (conn.to == this && conn.toPort.equals(port.id)) {
-                    isConnected = true;
-                    break;
-                }
-            } else {
-                if (conn.from == this && conn.fromPort.equals(port.id)) {
-                    isConnected = true;
-                    break;
+        
+        // Skip connection check if zoomed out too much and not drawing port shapes anyway
+        if (zoom > 0.2f) {
+            for (GuiConnection conn : connections) {
+                if (isInput) {
+                    if (conn.to == this && conn.toPort.equals(port.id)) {
+                        isConnected = true;
+                        break;
+                    }
+                } else {
+                    if (conn.from == this && conn.fromPort.equals(port.id)) {
+                        isConnected = true;
+                        break;
+                    }
                 }
             }
         }
 
         // Port rendering (more "Unreal Engine" style)
-        float size = 4.0f;
-        if (port.type == NodeDefinition.PortType.EXEC) {
-            // Execution port: Arrow shape
-            if (isConnected) {
-                // Filled arrow
-                renderTriangle(guiGraphics, px - size, py - size, px + size, py, px - size, py + size, color);
-            } else {
-                // Outline arrow
-                renderTriangleOutline(guiGraphics, px - size, py - size, px + size, py, px - size, py + size, color);
-            }
-        } else {
-            // Data port: Circle
-            if (isConnected) {
-                // Filled circle
-                drawCircle(guiGraphics, px, py, (int)size, color);
-            } else {
-                // Hollow circle
-                drawCircleOutline(guiGraphics, px, py, (int)size, color);
-            }
-        }
-
-        // Port label
-        if (isInput) {
-            guiGraphics.drawString(font, port.displayName, px + 8, py - 1, 0xFFAAAAAA, false);
-            
-            if (port.hasInput && !isConnected) {
-                float inputX = px + 8 + font.width(port.displayName) + 2;
-                float inputY = py - 4;
-                float inputWidth = 50;
-                float inputHeight = 10;
-                
-                // Background
-                guiGraphics.fill((int)inputX, (int)inputY, (int)(inputX + inputWidth), (int)(inputY + inputHeight), 0x66000000);
-                
-                if (port.type == NodeDefinition.PortType.BOOLEAN) {
-                    JsonElement val = inputValues.get(port.id);
-                    boolean boolVal = val != null ? val.getAsBoolean() : (port.defaultValue instanceof Boolean ? (Boolean) port.defaultValue : false);
-                    
-                    // Checkbox style
-                    int boxColor = boolVal ? 0xFF36CF36 : 0xFF333333;
-                    guiGraphics.fill((int)inputX + 2, (int)inputY + 2, (int)inputX + 8, (int)inputY + 8, boxColor);
-                    guiGraphics.renderOutline((int)inputX + 1, (int)inputY + 1, 8, 8, 0xFFFFFFFF);
-                    
-                    String text = boolVal ? "True" : "False";
-                    guiGraphics.drawString(font, text, (int)inputX + 12, (int)inputY + 1, 0xFFCCCCCC, false);
-                } else if (port.options != null && port.options.length > 0) {
-                    // Selection box style
-                    guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, 0xFFFFFFFF);
-                    
-                    JsonElement val = inputValues.get(port.id);
-                    String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : port.options[0]);
-                    
-                    // Draw selection arrow
-                    guiGraphics.drawString(font, "v", (int)(inputX + inputWidth - 8), (int)inputY + 1, 0xFFAAAAAA, false);
-                    
-                    String renderText = text;
-                    if (font.width(renderText) > inputWidth - 12) {
-                        renderText = font.plainSubstrByWidth(renderText, (int)inputWidth - 15, true) + "..";
-                    }
-                    guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
+        if (zoom > 0.3f) {
+            float size = 4.0f;
+            if (port.type == NodeDefinition.PortType.EXEC) {
+                // Execution port: Arrow shape
+                if (isConnected) {
+                    // Filled arrow
+                    renderTriangle(guiGraphics, px - size, py - size, px + size, py, px - size, py + size, color);
                 } else {
-                    // Border if focused
-                    boolean isFocused = focusedNode == this && focusedPort != null && focusedPort.equals(port.id);
-                    guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, isFocused ? 0xFFFFFFFF : 0x33FFFFFF);
-                    
-                    // Text
-                    JsonElement val = inputValues.get(port.id);
-                    String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : "");
-                    
-                    String renderText = text;
-                    // Truncate text if too long
-                    if (font.width(renderText) > inputWidth - 4) {
-                        renderText = "..." + font.plainSubstrByWidth(renderText, (int)inputWidth - 10, true);
-                    }
-                    
-                    guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
+                    // Outline arrow
+                    renderTriangleOutline(guiGraphics, px - size, py - size, px + size, py, px - size, py + size, color);
+                }
+            } else {
+                // Data port: Circle
+                if (isConnected) {
+                    // Filled circle
+                    drawCircle(guiGraphics, px, py, (int)size, color);
+                } else {
+                    // Hollow circle
+                    drawCircleOutline(guiGraphics, px, py, (int)size, color);
                 }
             }
-        } else {
-            guiGraphics.drawString(font, port.displayName, px - 8 - font.width(port.displayName), py - 1, 0xFFAAAAAA, false);
+        } else if (zoom > 0.15f) {
+            // Very simplified port: just a 2x2 colored square
+            guiGraphics.fill(px - 1, py - 1, px + 1, py + 1, color);
+        }
+
+        // Port label - hide if zoomed out
+        if (zoom > 0.4f) {
+            if (isInput) {
+                guiGraphics.drawString(font, port.displayName, px + 8, py - 1, 0xFFAAAAAA, false);
+                
+                if (port.hasInput && !isConnected && zoom > 0.6f) {
+                    float inputX = px + 8 + font.width(port.displayName) + 2;
+                    float inputY = py - 4;
+                    float inputWidth = 50;
+                    float inputHeight = 10;
+                    
+                    // Background
+                    guiGraphics.fill((int)inputX, (int)inputY, (int)(inputX + inputWidth), (int)(inputY + inputHeight), 0x66000000);
+                    
+                    if (port.type == NodeDefinition.PortType.BOOLEAN) {
+                        JsonElement val = inputValues.get(port.id);
+                        boolean boolVal = val != null ? val.getAsBoolean() : (port.defaultValue instanceof Boolean ? (Boolean) port.defaultValue : false);
+                        
+                        // Checkbox style
+                        int boxColor = boolVal ? 0xFF36CF36 : 0xFF333333;
+                        guiGraphics.fill((int)inputX + 2, (int)inputY + 2, (int)inputX + 8, (int)inputY + 8, boxColor);
+                        guiGraphics.renderOutline((int)inputX + 1, (int)inputY + 1, 8, 8, 0xFFFFFFFF);
+                        
+                        String text = boolVal ? "True" : "False";
+                        guiGraphics.drawString(font, text, (int)inputX + 12, (int)inputY + 1, 0xFFCCCCCC, false);
+                    } else if (port.options != null && port.options.length > 0) {
+                        // Selection box style
+                        guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, 0xFFFFFFFF);
+                        
+                        JsonElement val = inputValues.get(port.id);
+                        String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : port.options[0]);
+                        
+                        // Draw selection arrow
+                        guiGraphics.drawString(font, "v", (int)(inputX + inputWidth - 8), (int)inputY + 1, 0xFFAAAAAA, false);
+                        
+                        String renderText = text;
+                        if (font.width(renderText) > inputWidth - 12) {
+                            renderText = font.plainSubstrByWidth(renderText, (int)inputWidth - 15, true) + "..";
+                        }
+                        guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
+                    } else {
+                        // Border if focused
+                        boolean isFocused = focusedNode == this && focusedPort != null && focusedPort.equals(port.id);
+                        guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, isFocused ? 0xFFFFFFFF : 0x33FFFFFF);
+                        
+                        // Text
+                        JsonElement val = inputValues.get(port.id);
+                        String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : "");
+                        
+                        String renderText = text;
+                        // Truncate text if too long
+                        if (font.width(renderText) > inputWidth - 4) {
+                            renderText = "..." + font.plainSubstrByWidth(renderText, (int)inputWidth - 10, true);
+                        }
+                        
+                        guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
+                    }
+                }
+            } else {
+                guiGraphics.drawString(font, port.displayName, px - 8 - font.width(port.displayName), py - 1, 0xFFAAAAAA, false);
+            }
         }
     }
 
