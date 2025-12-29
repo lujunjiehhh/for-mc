@@ -44,9 +44,18 @@ public class BlueprintScreen extends Screen {
         guiGraphics.pose().translate(state.panX, state.panY);
         guiGraphics.pose().scale(state.zoom, state.zoom);
 
-        BlueprintRenderer.drawConnections(guiGraphics, state.connections);
+        BlueprintRenderer.drawConnections(guiGraphics, state.connections, this.width, this.height, state.panX, state.panY, state.zoom);
 
         for (GuiNode node : state.nodes) {
+            // Culling for nodes
+            float sX = node.x * state.zoom + state.panX;
+            float sY = node.y * state.zoom + state.panY;
+            float sW = node.width * state.zoom;
+            float sH = node.height * state.zoom;
+            
+            if (sX + sW < 0 || sX > this.width || sY + sH < 0 || sY > this.height) {
+                continue;
+            }
             node.render(guiGraphics, this.font, mouseX, mouseY, state.panX, state.panY, state.zoom, state.connections, state.focusedNode, state.focusedPort);
         }
 

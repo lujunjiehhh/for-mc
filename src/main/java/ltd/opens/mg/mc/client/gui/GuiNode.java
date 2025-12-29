@@ -100,7 +100,7 @@ public class GuiNode {
     }
 
     public float[] getPortPosition(int index, boolean isInput) {
-        float py = y + headerHeight + 10 + index * 15 + 3f; // Center of port
+        float py = y + headerHeight + 10 + index * 15; // Exact center of port
         float px = isInput ? x : x + width;
         return new float[]{px, py};
     }
@@ -170,10 +170,26 @@ public class GuiNode {
             }
         }
 
-        // Port dot
-        guiGraphics.fill(px - 4, py - 4, px + 4, py + 4, color);
-        if (isConnected) {
-            guiGraphics.renderOutline(px - 5, py - 5, 10, 10, 0xFFFFFFFF);
+        // Port rendering (more "Unreal Engine" style)
+        float size = 4.0f;
+        if (port.type == NodeDefinition.PortType.EXEC) {
+            // Execution port: Arrow shape
+            if (isConnected) {
+                // Filled arrow
+                renderTriangle(guiGraphics, px - size, py - size, px + size, py, px - size, py + size, color);
+            } else {
+                // Outline arrow
+                renderTriangleOutline(guiGraphics, px - size, py - size, px + size, py, px - size, py + size, color);
+            }
+        } else {
+            // Data port: Circle
+            if (isConnected) {
+                // Filled circle
+                drawCircle(guiGraphics, px, py, (int)size, color);
+            } else {
+                // Hollow circle
+                drawCircleOutline(guiGraphics, px, py, (int)size, color);
+            }
         }
 
         // Port label
@@ -240,6 +256,93 @@ public class GuiNode {
 
     public boolean isMouseOverHeader(double worldMouseX, double worldMouseY) {
         return worldMouseX >= x && worldMouseX <= x + width && worldMouseY >= y && worldMouseY <= y + headerHeight;
+    }
+
+    private void renderTriangle(GuiGraphics guiGraphics, float x1, float y1, float x2, float y2, float x3, float y3, int color) {
+        // Optimized triangle fill: Use scanline but with fewer fill calls
+        float minY = Math.min(y1, Math.min(y2, y3));
+        float maxY = Math.max(y1, Math.max(y2, y3));
+        
+        int iMinY = (int) Math.floor(minY);
+        int iMaxY = (int) Math.ceil(maxY);
+        
+        for (int y = iMinY; y <= iMaxY; y++) {
+            float minX = Float.MAX_VALUE;
+            float maxX = -Float.MAX_VALUE;
+            
+            float[][] edges = {{x1, y1, x2, y2}, {x2, y2, x3, y3}, {x3, y3, x1, y1}};
+            boolean intersected = false;
+            for (float[] edge : edges) {
+                float ey1 = edge[1], ey2 = edge[3];
+                if ((ey1 <= y && ey2 > y) || (ey2 <= y && ey1 > y)) {
+                    float ex1 = edge[0], ex2 = edge[2];
+                    float ix = ex1 + (y - ey1) * (ex2 - ex1) / (ey2 - ey1);
+                    minX = Math.min(minX, ix);
+                    maxX = Math.max(maxX, ix);
+                    intersected = true;
+                }
+            }
+            if (intersected) {
+                guiGraphics.fill((int)Math.floor(minX), y, (int)Math.ceil(maxX), y + 1, color);
+            }
+        }
+    }
+
+    private void renderTriangleOutline(GuiGraphics guiGraphics, float x1, float y1, float x2, float y2, float x3, float y3, int color) {
+        drawLine(guiGraphics, x1, y1, x2, y2, color);
+        drawLine(guiGraphics, x2, y2, x3, y3, color);
+        drawLine(guiGraphics, x3, y3, x1, y1, color);
+    }
+
+    private void drawLine(GuiGraphics guiGraphics, float x1, float y1, float x2, float y2, int color) {
+        // Use a single fill if it's almost horizontal or vertical
+        if (Math.abs(x1 - x2) < 0.5f) {
+            guiGraphics.fill((int)x1, (int)Math.min(y1, y2), (int)x1 + 1, (int)Math.max(y1, y2) + 1, color);
+            return;
+        }
+        if (Math.abs(y1 - y2) < 0.5f) {
+            guiGraphics.fill((int)Math.min(x1, x2), (int)y1, (int)Math.max(x1, x2) + 1, (int)y1 + 1, color);
+            return;
+        }
+
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.5f) return;
+
+        // Optimized line drawing for ports and outlines
+        float step = 1.5f;
+        int numSteps = (int)(len / step);
+        float xInc = dx * step / len;
+        float yInc = dy * step / len;
+        float curX = x1;
+        float curY = y1;
+
+        for (int i = 0; i <= numSteps; i++) {
+            guiGraphics.fill((int)curX, (int)curY, (int)curX + 1, (int)curY + 1, color);
+            curX += xInc;
+            curY += yInc;
+        }
+    }
+
+    private void drawCircle(GuiGraphics guiGraphics, float cx, float cy, int radius, int color) {
+        for (int y = -radius; y <= radius; y++) {
+            int xSpan = (int) Math.sqrt(radius * radius - y * y);
+            guiGraphics.fill((int)(cx - xSpan), (int)(cy + y), (int)(cx + xSpan + 1), (int)(cy + y + 1), color);
+        }
+    }
+
+    private void drawCircleOutline(GuiGraphics guiGraphics, float cx, float cy, int radius, int color) {
+        for (int y = -radius; y <= radius; y++) {
+            int xSpan = (int) Math.sqrt(radius * radius - y * y);
+            guiGraphics.fill((int)(cx - xSpan), (int)(cy + y), (int)(cx - xSpan + 1), (int)(cy + y + 1), color);
+            guiGraphics.fill((int)(cx + xSpan), (int)(cy + y), (int)(cx + xSpan + 1), (int)(cy + y + 1), color);
+        }
+        for (int x = -radius; x <= radius; x++) {
+            int ySpan = (int) Math.sqrt(radius * radius - x * x);
+            guiGraphics.fill((int)(cx + x), (int)(cy - ySpan), (int)(cx + x + 1), (int)(cy - ySpan + 1), color);
+            guiGraphics.fill((int)(cx + x), (int)(cy + ySpan), (int)(cx + x + 1), (int)(cy + ySpan + 1), color);
+        }
     }
 
     public static class NodePort {

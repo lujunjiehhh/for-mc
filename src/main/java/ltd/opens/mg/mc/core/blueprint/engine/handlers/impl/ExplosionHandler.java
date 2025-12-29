@@ -6,6 +6,8 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeHandler;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.phys.Vec3;
 
 public class ExplosionHandler implements NodeHandler {
     @Override
@@ -23,9 +25,29 @@ public class ExplosionHandler implements NodeHandler {
 
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {
-                // Use the official Level.explode method to reuse TNT's explosion logic
-                // On the client side, this will handle particles and sounds automatically
-                mc.level.explode(null, x, y, z, radius, Level.ExplosionInteraction.TNT);
+                // Client-side: Level.explode() often doesn't do much because it expects server packets.
+                // We manually trigger the explosion effects (sound and particles) that a TNT would produce.
+                
+                // 1. Create the explosion object for calculation if needed, 
+                // but for client-side visual, we can just use the level's methods.
+                
+                // 2. Play Sound (Vanilla TNT explosion sound)
+                mc.level.playLocalSound(x, y, z, 
+                    net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(), 
+                    net.minecraft.sounds.SoundSource.BLOCKS, 
+                    4.0F, 
+                    (1.0F + (mc.level.random.nextFloat() - mc.level.random.nextFloat()) * 0.2F) * 0.7F, 
+                    false);
+
+                // 3. Add Particles (Vanilla explosion particles)
+                if (radius > 2.0F) {
+                    mc.level.addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, x, y, z, 1.0D, 0.0D, 0.0D);
+                } else {
+                    mc.level.addParticle(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x, y, z, 1.0D, 0.0D, 0.0D);
+                }
+                
+                // Note: Client-side explosion won't break blocks or hurt entities 
+                // as that requires server-side logic.
             }
         } catch (Exception e) {
             // Ignore errors

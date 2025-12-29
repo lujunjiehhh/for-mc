@@ -17,11 +17,17 @@ public class BlueprintEngine {
     public static void execute(String json, String eventType, String name, String[] args, 
                                 String triggerUuid, String triggerName, double tx, double ty, double tz) {
         try {
-            MaingraphforMC.LOGGER.info("Executing blueprint: {} for event {}", name, eventType);
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-            
+            execute(root, eventType, name, args, triggerUuid, triggerName, tx, ty, tz);
+        } catch (Exception e) {
+            MaingraphforMC.LOGGER.error("Error parsing blueprint JSON", e);
+        }
+    }
+
+    public static void execute(JsonObject root, String eventType, String name, String[] args, 
+                                String triggerUuid, String triggerName, double tx, double ty, double tz) {
+        try {
             if (!root.has("execution") || !root.get("execution").isJsonArray()) {
-                MaingraphforMC.LOGGER.warn("Missing 'execution' array in blueprint JSON");
                 return;
             }
 

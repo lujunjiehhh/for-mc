@@ -34,6 +34,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.client.multiplayer.ServerData;
 import java.io.IOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
 @Mod(value = MaingraphforMC.MODID, dist = Dist.CLIENT)
@@ -42,6 +44,26 @@ public class MaingraphforMCClient {
 
     private double lastX, lastY, lastZ;
     private boolean hasLastPos = false;
+    private JsonObject cachedBlueprint = null;
+    private long lastBlueprintLoadTime = 0;
+
+    private JsonObject getBlueprint() {
+        try {
+            Path dataFile = getBlueprintPath();
+            if (Files.exists(dataFile)) {
+                long lastModified = Files.getLastModifiedTime(dataFile).toMillis();
+                if (cachedBlueprint == null || lastModified > lastBlueprintLoadTime) {
+                    String json = Files.readString(dataFile);
+                    cachedBlueprint = JsonParser.parseString(json).getAsJsonObject();
+                    lastBlueprintLoadTime = lastModified;
+                }
+                return cachedBlueprint;
+            }
+        } catch (Exception e) {
+            // Error loading or parsing
+        }
+        return null;
+    }
 
     public static Path getBlueprintPath() {
         Minecraft mc = Minecraft.getInstance();
@@ -97,6 +119,8 @@ public class MaingraphforMCClient {
         Minecraft mc = Minecraft.getInstance();
         while (BLUEPRINT_KEY.consumeClick()) {
             mc.setScreen(new BlueprintScreen());
+            // Clear cache when opening screen to ensure fresh reload after editing
+            cachedBlueprint = null;
         }
 
         if (mc.player != null && mc.level != null) {
@@ -109,16 +133,11 @@ public class MaingraphforMCClient {
                 double dy = y - lastY;
                 double dz = z - lastZ;
 
-                if (dx * dx + dy * dy + dz * dz > 0.0001) { // Approx 0.01 block movement
-                    try {
-                        Path dataFile = getBlueprintPath();
-                        if (Files.exists(dataFile)) {
-                            String json = Files.readString(dataFile);
-                            BlueprintEngine.execute(json, "on_player_move", "", new String[0], 
-                                mc.player.getUUID().toString(), mc.player.getName().getString(), x, y, z);
-                        }
-                    } catch (Exception e) {
-                        // Silent fail for tick events
+                if (dx * dx + dy * dy + dz * dz > 0.01) { // Increased threshold to 0.1 block movement
+                    JsonObject blueprint = getBlueprint();
+                    if (blueprint != null) {
+                        BlueprintEngine.execute(blueprint, "on_player_move", "", new String[0], 
+                            mc.player.getUUID().toString(), mc.player.getName().getString(), x, y, z);
                     }
                 }
             }
