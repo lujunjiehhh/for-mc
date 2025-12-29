@@ -97,7 +97,7 @@ public class MaingraphforMCClient {
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
-        MaingraphforMC.LOGGER.info("HELLO FROM CLIENT SETUP");
+        // Client setup logic
     }
 
     @SubscribeEvent
