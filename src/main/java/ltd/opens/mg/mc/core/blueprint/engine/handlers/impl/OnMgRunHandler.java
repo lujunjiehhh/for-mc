@@ -14,6 +14,9 @@ public class OnMgRunHandler implements NodeHandler {
             // and have the list handler parse it.
             return String.join("|", ctx.args);
         }
+        if (pinId.equals("trigger_uuid")) {
+            return ctx.triggerUuid != null ? ctx.triggerUuid : "";
+        }
         return "";
     }
 }

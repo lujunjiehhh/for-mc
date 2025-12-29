@@ -27,6 +27,7 @@ public class NodeRegistry {
         int colorBoolean = 0xFF920101;
         int colorObject = 0xFF00AAFF;
         int colorList = 0xFFFFCC00; // Yellow-ish for List
+        int colorUUID = 0xFF55FF55; // Light Green for UUID
 
         // Register default nodes matching web editor
         // Events
@@ -36,6 +37,7 @@ public class NodeRegistry {
             .addOutput("exec", NodeDefinition.PortType.EXEC, colorExec)
             .addOutput("name", NodeDefinition.PortType.STRING, colorString)
             .addOutput("parameters", NodeDefinition.PortType.LIST, colorList)
+            .addOutput("trigger_uuid", NodeDefinition.PortType.UUID, colorUUID)
             .build());
 
         // Function
@@ -53,6 +55,14 @@ public class NodeRegistry {
             .addInput("list", NodeDefinition.PortType.LIST, colorList)
             .addInput("index", NodeDefinition.PortType.FLOAT, colorFloat, true, 0)
             .addOutput("value", NodeDefinition.PortType.STRING, colorString)
+            .build());
+
+        register(new NodeDefinition.Builder("get_entity_info", "Get Entity Info")
+            .category("Function")
+            .color(0xFF44AA44)
+            .addInput("uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .addOutput("name", NodeDefinition.PortType.STRING, colorString)
+            .addOutput("type", NodeDefinition.PortType.STRING, colorString)
             .build());
 
         // Logic

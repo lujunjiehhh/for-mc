@@ -81,6 +81,7 @@ public class NodeLogicRegistry {
         register("print_chat", new PrintChatHandler());
         register("print_string", new PrintStringHandler());
         register("get_list_item", new GetListItemHandler());
+        register("get_entity_info", new GetEntityInfoHandler());
 
         // Logic
         register("branch", new BranchHandler());
