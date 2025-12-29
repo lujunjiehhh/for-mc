@@ -1,0 +1,85 @@
+package ltd.opens.mg.mc.client.gui;
+
+import ltd.opens.mg.mc.core.blueprint.NodeDefinition;
+
+public class BlueprintConnectionHandler {
+    private final BlueprintState state;
+
+    public BlueprintConnectionHandler(BlueprintState state) {
+        this.state = state;
+    }
+
+    public boolean mouseClicked(double worldMouseX, double worldMouseY) {
+        for (GuiNode node : state.nodes) {
+            // Check inputs
+            for (int i = 0; i < node.inputs.size(); i++) {
+                float[] pos = node.getPortPosition(i, true);
+                if (Math.abs(worldMouseX - pos[0]) < 5 && Math.abs(worldMouseY - pos[1]) < 5) {
+                    state.connectionStartNode = node;
+                    state.connectionStartPort = node.inputs.get(i).name;
+                    state.isConnectionFromInput = true;
+                    return true;
+                }
+            }
+            // Check outputs
+            for (int i = 0; i < node.outputs.size(); i++) {
+                float[] pos = node.getPortPosition(i, false);
+                if (Math.abs(worldMouseX - pos[0]) < 5 && Math.abs(worldMouseY - pos[1]) < 5) {
+                    state.connectionStartNode = node;
+                    state.connectionStartPort = node.outputs.get(i).name;
+                    state.isConnectionFromInput = false;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean mouseReleased(double worldMouseX, double worldMouseY) {
+        if (state.connectionStartNode != null) {
+            for (GuiNode node : state.nodes) {
+                if (node == state.connectionStartNode) continue;
+                
+                // If started from output, look for input
+                if (!state.isConnectionFromInput) {
+                    GuiNode.NodePort startPort = state.connectionStartNode.getPortByName(state.connectionStartPort, false);
+                    for (int i = 0; i < node.inputs.size(); i++) {
+                        GuiNode.NodePort targetPort = node.inputs.get(i);
+                        float[] pos = node.getPortPosition(i, true);
+                        if (Math.abs(worldMouseX - pos[0]) < 10 && Math.abs(worldMouseY - pos[1]) < 10) {
+                            if (startPort != null && startPort.type == targetPort.type) {
+                                // Remove existing connections to this input if it's not EXEC
+                                if (targetPort.type != NodeDefinition.PortType.EXEC) {
+                                    state.connections.removeIf(c -> c.to == node && c.toPort.equals(targetPort.name));
+                                }
+                                state.connections.add(new GuiConnection(state.connectionStartNode, state.connectionStartPort, node, targetPort.name));
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    // Started from input, look for output
+                    GuiNode.NodePort startPort = state.connectionStartNode.getPortByName(state.connectionStartPort, true);
+                    for (int i = 0; i < node.outputs.size(); i++) {
+                        GuiNode.NodePort targetPort = node.outputs.get(i);
+                        float[] pos = node.getPortPosition(i, false);
+                        if (Math.abs(worldMouseX - pos[0]) < 10 && Math.abs(worldMouseY - pos[1]) < 10) {
+                            if (startPort != null && startPort.type == targetPort.type) {
+                                // Remove existing connections to the start input if it's not EXEC
+                                if (startPort.type != NodeDefinition.PortType.EXEC) {
+                                    state.connections.removeIf(c -> c.to == state.connectionStartNode && c.toPort.equals(startPort.name));
+                                }
+                                state.connections.add(new GuiConnection(node, targetPort.name, state.connectionStartNode, state.connectionStartPort));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            state.connectionStartNode = null;
+            state.connectionStartPort = null;
+            return true;
+        }
+        return false;
+    }
+}
