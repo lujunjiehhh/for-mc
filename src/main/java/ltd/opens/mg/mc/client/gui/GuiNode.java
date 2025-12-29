@@ -36,20 +36,20 @@ public class GuiNode {
         this.color = def.color();
         
         for (NodeDefinition.PortDefinition p : def.inputs()) {
-            addInput(p.name(), p.type(), p.color(), p.hasInput(), p.defaultValue(), p.options());
+            addInput(p.id(), p.displayName(), p.type(), p.color(), p.hasInput(), p.defaultValue(), p.options());
         }
         for (NodeDefinition.PortDefinition p : def.outputs()) {
-            addOutput(p.name(), p.type(), p.color());
+            addOutput(p.id(), p.displayName(), p.type(), p.color());
         }
     }
 
-    public void addInput(String name, NodeDefinition.PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
-        inputs.add(new NodePort(name, type, color, true, hasInput, defaultValue, options));
+    public void addInput(String id, String displayName, NodeDefinition.PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
+        inputs.add(new NodePort(id, displayName, type, color, true, hasInput, defaultValue, options));
         sizeDirty = true;
     }
 
-    public void addOutput(String name, NodeDefinition.PortType type, int color) {
-        outputs.add(new NodePort(name, type, color, false, false, null, null));
+    public void addOutput(String id, String displayName, NodeDefinition.PortType type, int color) {
+        outputs.add(new NodePort(id, displayName, type, color, false, false, null, null));
         sizeDirty = true;
     }
 
@@ -64,7 +64,7 @@ public class GuiNode {
 
         float maxInputW = 0;
         for (NodePort p : inputs) {
-            float w = 10 + font.width(p.name);
+            float w = 10 + font.width(p.displayName);
             if (p.hasInput) {
                 w += 55; // Space for input field
             }
@@ -73,7 +73,7 @@ public class GuiNode {
 
         float maxOutputW = 0;
         for (NodePort p : outputs) {
-            float w = 10 + font.width(p.name);
+            float w = 10 + font.width(p.displayName);
             maxOutputW = Math.max(maxOutputW, w);
         }
 
@@ -81,20 +81,20 @@ public class GuiNode {
         sizeDirty = false;
     }
 
-    public float[] getPortPositionByName(String name, boolean isInput) {
+    public float[] getPortPositionByName(String id, boolean isInput) {
         List<NodePort> ports = isInput ? inputs : outputs;
         for (int i = 0; i < ports.size(); i++) {
-            if (ports.get(i).name.equals(name)) {
+            if (ports.get(i).id.equals(id)) {
                 return getPortPosition(i, isInput);
             }
         }
         return new float[]{x, y};
     }
 
-    public NodePort getPortByName(String name, boolean isInput) {
+    public NodePort getPortByName(String id, boolean isInput) {
         List<NodePort> ports = isInput ? inputs : outputs;
         for (NodePort p : ports) {
-            if (p.name.equals(name)) return p;
+            if (p.id.equals(id)) return p;
         }
         return null;
     }
@@ -158,50 +158,30 @@ public class GuiNode {
         boolean isConnected = false;
         for (GuiConnection conn : connections) {
             if (isInput) {
-                if (conn.to == this && conn.toPort.equals(port.name)) {
+                if (conn.to == this && conn.toPort.equals(port.id)) {
                     isConnected = true;
                     break;
                 }
             } else {
-                if (conn.from == this && conn.fromPort.equals(port.name)) {
+                if (conn.from == this && conn.fromPort.equals(port.id)) {
                     isConnected = true;
                     break;
                 }
             }
         }
 
-        if (port.type == NodeDefinition.PortType.EXEC) {
-            // House shape for EXEC
-            if (isInput) {
-                guiGraphics.fill(px - 1, py, px + 1, py + 6, color);
-                guiGraphics.fill(px + 1, py + 1, px + 3, py + 5, color);
-                guiGraphics.fill(px + 3, py + 2, px + 5, py + 4, color);
-                if (isConnected) guiGraphics.fill(px, py + 2, px + 2, py + 4, 0xFFFFFFFF);
-            } else {
-                guiGraphics.fill(px - 5, py, px - 3, py + 6, color);
-                guiGraphics.fill(px - 3, py + 1, px - 1, py + 5, color);
-                guiGraphics.fill(px - 1, py + 2, px + 1, py + 4, color);
-                if (isConnected) guiGraphics.fill(px - 3, py + 2, px - 1, py + 4, 0xFFFFFFFF);
-            }
-        } else {
-            // Circle-ish for DATA ports
-            if (isConnected) {
-                guiGraphics.fill(px - 3, py + 1, px + 3, py + 5, color);
-                guiGraphics.fill(px - 2, py, px + 2, py + 6, color);
-                guiGraphics.fill(px - 1, py + 2, px + 1, py + 4, 0xFFFFFFFF);
-            } else {
-                guiGraphics.fill(px - 3, py + 1, px + 3, py + 5, color);
-                guiGraphics.fill(px - 2, py, px + 2, py + 6, color);
-                guiGraphics.fill(px - 1, py + 2, px + 1, py + 4, 0xAA000000);
-            }
+        // Port dot
+        guiGraphics.fill(px - 4, py - 4, px + 4, py + 4, color);
+        if (isConnected) {
+            guiGraphics.renderOutline(px - 5, py - 5, 10, 10, 0xFFFFFFFF);
         }
 
-        // Port Name and Value
+        // Port label
         if (isInput) {
-            guiGraphics.drawString(font, port.name, px + 8, py - 1, 0xFFAAAAAA, false);
+            guiGraphics.drawString(font, port.displayName, px + 8, py - 1, 0xFFAAAAAA, false);
             
             if (port.hasInput && !isConnected) {
-                float inputX = px + 8 + font.width(port.name) + 2;
+                float inputX = px + 8 + font.width(port.displayName) + 2;
                 float inputY = py - 4;
                 float inputWidth = 50;
                 float inputHeight = 10;
@@ -210,7 +190,7 @@ public class GuiNode {
                 guiGraphics.fill((int)inputX, (int)inputY, (int)(inputX + inputWidth), (int)(inputY + inputHeight), 0x66000000);
                 
                 if (port.type == NodeDefinition.PortType.BOOLEAN) {
-                    JsonElement val = inputValues.get(port.name);
+                    JsonElement val = inputValues.get(port.id);
                     boolean boolVal = val != null ? val.getAsBoolean() : (port.defaultValue instanceof Boolean ? (Boolean) port.defaultValue : false);
                     
                     // Checkbox style
@@ -224,7 +204,7 @@ public class GuiNode {
                     // Selection box style
                     guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, 0xFFFFFFFF);
                     
-                    JsonElement val = inputValues.get(port.name);
+                    JsonElement val = inputValues.get(port.id);
                     String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : port.options[0]);
                     
                     // Draw selection arrow
@@ -237,11 +217,11 @@ public class GuiNode {
                     guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
                 } else {
                     // Border if focused
-                    boolean isFocused = focusedNode == this && focusedPort != null && focusedPort.equals(port.name);
+                    boolean isFocused = focusedNode == this && focusedPort != null && focusedPort.equals(port.id);
                     guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, isFocused ? 0xFFFFFFFF : 0x33FFFFFF);
                     
                     // Text
-                    JsonElement val = inputValues.get(port.name);
+                    JsonElement val = inputValues.get(port.id);
                     String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : "");
                     
                     String renderText = text;
@@ -254,7 +234,7 @@ public class GuiNode {
                 }
             }
         } else {
-            guiGraphics.drawString(font, port.name, px - 8 - font.width(port.name), py - 1, 0xFFAAAAAA, false);
+            guiGraphics.drawString(font, port.displayName, px - 8 - font.width(port.displayName), py - 1, 0xFFAAAAAA, false);
         }
     }
 
@@ -263,7 +243,8 @@ public class GuiNode {
     }
 
     public static class NodePort {
-        public String name;
+        public String id;
+        public String displayName;
         public NodeDefinition.PortType type;
         public int color;
         public boolean isInput;
@@ -271,8 +252,9 @@ public class GuiNode {
         public Object defaultValue;
         public String[] options;
 
-        public NodePort(String name, NodeDefinition.PortType type, int color, boolean isInput, boolean hasInput, Object defaultValue, String[] options) {
-            this.name = name;
+        public NodePort(String id, String displayName, NodeDefinition.PortType type, int color, boolean isInput, boolean hasInput, Object defaultValue, String[] options) {
+            this.id = id;
+            this.displayName = displayName;
             this.type = type;
             this.color = color;
             this.isInput = isInput;

@@ -34,24 +34,40 @@ public record NodeDefinition(
             return this;
         }
 
-        public Builder addInput(String name, PortType type, int color) {
-            inputs.add(new PortDefinition(name, type, color, false, null, null));
+        public Builder addInput(String id, String displayName, PortType type, int color) {
+            inputs.add(new PortDefinition(id, displayName, type, color, false, null, null));
             return this;
         }
 
-        public Builder addInput(String name, PortType type, int color, boolean hasInput, Object defaultValue) {
-            inputs.add(new PortDefinition(name, type, color, hasInput, defaultValue, null));
+        public Builder addInput(String id, PortType type, int color) {
+            return addInput(id, id, type, color);
+        }
+
+        public Builder addInput(String id, String displayName, PortType type, int color, boolean hasInput, Object defaultValue) {
+            inputs.add(new PortDefinition(id, displayName, type, color, hasInput, defaultValue, null));
             return this;
         }
 
-        public Builder addInput(String name, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
-            inputs.add(new PortDefinition(name, type, color, hasInput, defaultValue, options));
+        public Builder addInput(String id, PortType type, int color, boolean hasInput, Object defaultValue) {
+            return addInput(id, id, type, color, hasInput, defaultValue);
+        }
+
+        public Builder addInput(String id, String displayName, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
+            inputs.add(new PortDefinition(id, displayName, type, color, hasInput, defaultValue, options));
             return this;
         }
 
-        public Builder addOutput(String name, PortType type, int color) {
-            outputs.add(new PortDefinition(name, type, color, false, null, null));
+        public Builder addInput(String id, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
+            return addInput(id, id, type, color, hasInput, defaultValue, options);
+        }
+
+        public Builder addOutput(String id, String displayName, PortType type, int color) {
+            outputs.add(new PortDefinition(id, displayName, type, color, false, null, null));
             return this;
+        }
+
+        public Builder addOutput(String id, PortType type, int color) {
+            return addOutput(id, id, type, color);
         }
 
         public NodeDefinition build() {
@@ -59,7 +75,7 @@ public record NodeDefinition(
         }
     }
 
-    public record PortDefinition(String name, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {}
+    public record PortDefinition(String id, String displayName, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {}
 
     public enum PortType {
         EXEC, STRING, FLOAT, BOOLEAN, OBJECT, LIST, UUID, ENUM, ANY
