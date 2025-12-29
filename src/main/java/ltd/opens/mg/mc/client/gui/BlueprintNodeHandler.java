@@ -39,6 +39,36 @@ public class BlueprintNodeHandler {
                                 JsonElement val = node.inputValues.get(port.name);
                                 boolean current = val != null ? val.getAsBoolean() : (port.defaultValue instanceof Boolean ? (Boolean) port.defaultValue : false);
                                 node.inputValues.addProperty(port.name, !current);
+                            } else if (port.options != null && port.options.length > 0) {
+                                // Open selection modal instead of cycling
+                                JsonElement val = node.inputValues.get(port.name);
+                                String current = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : port.options[0]);
+                                
+                                final GuiNode targetNode = node;
+                                final String targetPort = port.name;
+                                
+                                Minecraft.getInstance().setScreen(new InputModalScreen(
+                                    screen, 
+                                    "Select Type", 
+                                    current, 
+                                    false, 
+                                    port.options,
+                                    InputModalScreen.Mode.SELECTION,
+                                    (selected) -> {
+                                        JsonElement oldVal = targetNode.inputValues.get(targetPort);
+                                        String oldStr = oldVal != null ? oldVal.getAsString() : "";
+                                        
+                                        if (!selected.equals(oldStr)) {
+                                            targetNode.inputValues.addProperty(targetPort, selected);
+                                            // Update output port type based on selection
+                                            NodeDefinition.PortType newType = NodeDefinition.PortType.valueOf(selected.toUpperCase());
+                                            targetNode.getPortByName("output", false).type = newType;
+                                            
+                                            // Disconnect all output connections since the type changed
+                                            state.connections.removeIf(conn -> conn.from == targetNode && conn.fromPort.equals("output"));
+                                        }
+                                    }
+                                ));
                             } else {
                                 JsonElement val = node.inputValues.get(port.name);
                                 String initialText = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : "");

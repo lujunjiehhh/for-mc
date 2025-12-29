@@ -36,20 +36,20 @@ public class GuiNode {
         this.color = def.color();
         
         for (NodeDefinition.PortDefinition p : def.inputs()) {
-            addInput(p.name(), p.type(), p.color(), p.hasInput(), p.defaultValue());
+            addInput(p.name(), p.type(), p.color(), p.hasInput(), p.defaultValue(), p.options());
         }
         for (NodeDefinition.PortDefinition p : def.outputs()) {
             addOutput(p.name(), p.type(), p.color());
         }
     }
 
-    public void addInput(String name, NodeDefinition.PortType type, int color, boolean hasInput, Object defaultValue) {
-        inputs.add(new NodePort(name, type, color, true, hasInput, defaultValue));
+    public void addInput(String name, NodeDefinition.PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
+        inputs.add(new NodePort(name, type, color, true, hasInput, defaultValue, options));
         sizeDirty = true;
     }
 
     public void addOutput(String name, NodeDefinition.PortType type, int color) {
-        outputs.add(new NodePort(name, type, color, false, false, null));
+        outputs.add(new NodePort(name, type, color, false, false, null, null));
         sizeDirty = true;
     }
 
@@ -139,8 +139,22 @@ public class GuiNode {
         }
     }
 
+    private int getPortColor(NodePort port) {
+        switch (port.type) {
+            case EXEC: return 0xFFFFFFFF;
+            case STRING: return 0xFFFF5555;
+            case FLOAT: return 0xFF55FF55;
+            case BOOLEAN: return 0xFF5555FF;
+            case LIST: return 0xFFFFFF55;
+            case UUID: return 0xFFFF55FF;
+            case ENUM: return 0xFFFFAA00;
+            case ANY: return 0xFFAAAAAA;
+            default: return port.color;
+        }
+    }
+
     private void renderPort(GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, NodePort port, int px, int py, boolean isInput, List<GuiConnection> connections, GuiNode focusedNode, String focusedPort) {
-        int color = port.color;
+        int color = getPortColor(port);
         boolean isConnected = false;
         for (GuiConnection conn : connections) {
             if (isInput) {
@@ -206,10 +220,25 @@ public class GuiNode {
                     
                     String text = boolVal ? "True" : "False";
                     guiGraphics.drawString(font, text, (int)inputX + 12, (int)inputY + 1, 0xFFCCCCCC, false);
+                } else if (port.options != null && port.options.length > 0) {
+                    // Selection box style
+                    guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, 0xFFFFFFFF);
+                    
+                    JsonElement val = inputValues.get(port.name);
+                    String text = val != null ? val.getAsString() : (port.defaultValue != null ? port.defaultValue.toString() : port.options[0]);
+                    
+                    // Draw selection arrow
+                    guiGraphics.drawString(font, "v", (int)(inputX + inputWidth - 8), (int)inputY + 1, 0xFFAAAAAA, false);
+                    
+                    String renderText = text;
+                    if (font.width(renderText) > inputWidth - 12) {
+                        renderText = font.plainSubstrByWidth(renderText, (int)inputWidth - 15, true) + "..";
+                    }
+                    guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
                 } else {
                     // Border if focused
                     boolean isFocused = focusedNode == this && focusedPort != null && focusedPort.equals(port.name);
-                    guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, 0x33FFFFFF);
+                    guiGraphics.renderOutline((int)inputX, (int)inputY, (int)inputWidth, (int)inputHeight, isFocused ? 0xFFFFFFFF : 0x33FFFFFF);
                     
                     // Text
                     JsonElement val = inputValues.get(port.name);
@@ -240,14 +269,16 @@ public class GuiNode {
         public boolean isInput;
         public boolean hasInput;
         public Object defaultValue;
+        public String[] options;
 
-        public NodePort(String name, NodeDefinition.PortType type, int color, boolean isInput, boolean hasInput, Object defaultValue) {
+        public NodePort(String name, NodeDefinition.PortType type, int color, boolean isInput, boolean hasInput, Object defaultValue, String[] options) {
             this.name = name;
             this.type = type;
             this.color = color;
             this.isInput = isInput;
             this.hasInput = hasInput;
             this.defaultValue = defaultValue;
+            this.options = options;
         }
     }
 }

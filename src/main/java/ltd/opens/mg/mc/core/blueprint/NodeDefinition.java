@@ -35,17 +35,22 @@ public record NodeDefinition(
         }
 
         public Builder addInput(String name, PortType type, int color) {
-            inputs.add(new PortDefinition(name, type, color, false, null));
+            inputs.add(new PortDefinition(name, type, color, false, null, null));
             return this;
         }
 
         public Builder addInput(String name, PortType type, int color, boolean hasInput, Object defaultValue) {
-            inputs.add(new PortDefinition(name, type, color, hasInput, defaultValue));
+            inputs.add(new PortDefinition(name, type, color, hasInput, defaultValue, null));
+            return this;
+        }
+
+        public Builder addInput(String name, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {
+            inputs.add(new PortDefinition(name, type, color, hasInput, defaultValue, options));
             return this;
         }
 
         public Builder addOutput(String name, PortType type, int color) {
-            outputs.add(new PortDefinition(name, type, color, false, null));
+            outputs.add(new PortDefinition(name, type, color, false, null, null));
             return this;
         }
 
@@ -54,9 +59,9 @@ public record NodeDefinition(
         }
     }
 
-    public record PortDefinition(String name, PortType type, int color, boolean hasInput, Object defaultValue) {}
+    public record PortDefinition(String name, PortType type, int color, boolean hasInput, Object defaultValue, String[] options) {}
 
     public enum PortType {
-        EXEC, STRING, FLOAT, BOOLEAN, OBJECT, LIST, UUID, ENUM
+        EXEC, STRING, FLOAT, BOOLEAN, OBJECT, LIST, UUID, ENUM, ANY
     }
 }

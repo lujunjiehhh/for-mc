@@ -11,54 +11,89 @@ import org.lwjgl.glfw.GLFW;
 import java.util.function.Consumer;
 
 public class InputModalScreen extends Screen {
+    public enum Mode {
+        INPUT,
+        SELECTION
+    }
+
     private final Screen parent;
     private final String titleStr;
     private final String initialValue;
     private final Consumer<String> onConfirm;
     private EditBox editBox;
     private final boolean isNumeric;
+    private final String[] options;
+    private final Mode mode;
+    private double scrollAmount = 0;
+    private int visibleCount = 5;
 
     public InputModalScreen(Screen parent, String title, String initialValue, boolean isNumeric, Consumer<String> onConfirm) {
+        this(parent, title, initialValue, isNumeric, null, Mode.INPUT, onConfirm);
+    }
+
+    public InputModalScreen(Screen parent, String title, String initialValue, boolean isNumeric, String[] options, Mode mode, Consumer<String> onConfirm) {
         super(Component.literal(title));
         this.parent = parent;
         this.titleStr = title;
         this.initialValue = initialValue;
         this.isNumeric = isNumeric;
+        this.options = options;
+        this.mode = mode;
         this.onConfirm = onConfirm;
     }
 
     @Override
     protected void init() {
         int width = 200;
-        int height = 80;
+        int height = (mode == Mode.SELECTION && options != null) ? Math.min(200, 40 + options.length * 22 + 30) : 80;
         int startX = (this.width - width) / 2;
         int startY = (this.height - height) / 2;
 
-        this.editBox = new EditBox(this.font, startX + 10, startY + 30, width - 20, 20, Component.literal("Input"));
-        this.editBox.setValue(initialValue);
-        if (isNumeric) {
-            this.editBox.setFilter(s -> s.isEmpty() || s.matches("^-?\\d*\\.?\\d*$"));
+        if (mode == Mode.INPUT) {
+            // Text Input Mode
+            this.editBox = new EditBox(this.font, startX + 10, startY + 30, width - 20, 20, Component.literal("Input"));
+            this.editBox.setValue(initialValue);
+            if (isNumeric) {
+                this.editBox.setFilter(s -> s.isEmpty() || s.matches("^-?\\d*\\.?\\d*$"));
+            }
+            this.addRenderableWidget(this.editBox);
+            this.setInitialFocus(this.editBox);
+
+            this.addRenderableWidget(Button.builder(Component.literal("Confirm"), (btn) -> {
+                onConfirm.accept(editBox.getValue());
+                this.minecraft.setScreen(parent);
+            }).bounds(startX + 10, startY + 55, 85, 20).build());
+
+            this.addRenderableWidget(Button.builder(Component.literal("Cancel"), (btn) -> {
+                this.minecraft.setScreen(parent);
+            }).bounds(startX + 105, startY + 55, 85, 20).build());
+        } else {
+            // Selection Mode
+            if (options != null) {
+                int btnY = startY + 30;
+                for (int i = 0; i < options.length; i++) {
+                    final String opt = options[i];
+                    Button b = Button.builder(Component.literal(opt), (btn) -> {
+                        onConfirm.accept(opt);
+                        this.minecraft.setScreen(parent);
+                    }).bounds(startX + 10, btnY + (i * 22), width - 20, 20).build();
+                    
+                    this.addRenderableWidget(b);
+                }
+            }
+
+            this.addRenderableWidget(Button.builder(Component.literal("Cancel"), (btn) -> {
+                this.minecraft.setScreen(parent);
+            }).bounds(startX + 10, startY + height - 25, width - 20, 20).build());
         }
-        this.addRenderableWidget(this.editBox);
-        this.setInitialFocus(this.editBox);
-
-        this.addRenderableWidget(Button.builder(Component.literal("Confirm"), (btn) -> {
-            onConfirm.accept(editBox.getValue());
-            this.minecraft.setScreen(parent);
-        }).bounds(startX + 10, startY + 55, 85, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Cancel"), (btn) -> {
-            this.minecraft.setScreen(parent);
-        }).bounds(startX + 105, startY + 55, 85, 20).build());
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // Use a manual dark overlay instead of renderBackground to avoid "blur once per frame" crash in 1.21.x
         guiGraphics.fill(0, 0, this.width, this.height, 0x88000000);
         
         int width = 200;
-        int height = 80;
+        int height = (mode == Mode.SELECTION && options != null) ? Math.min(200, 40 + options.length * 22 + 30) : 80;
         int startX = (this.width - width) / 2;
         int startY = (this.height - height) / 2;
         

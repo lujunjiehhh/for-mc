@@ -91,9 +91,10 @@ public class NodeRegistry {
         register(new NodeDefinition.Builder("cast", "Cast (Convert)")
             .category("Logic")
             .color(0xFF888888)
-            .addInput("input", NodeDefinition.PortType.OBJECT, colorObject)
-            .addInput("to_type", NodeDefinition.PortType.STRING, colorString, true, "STRING")
-            .addOutput("output", NodeDefinition.PortType.OBJECT, colorObject)
+            .addInput("input", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .addInput("to_type", NodeDefinition.PortType.STRING, colorString, true, "STRING", 
+                new String[]{"STRING", "FLOAT", "BOOLEAN", "UUID", "INT", "LIST"})
+            .addOutput("output", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
             .build());
     }
 }

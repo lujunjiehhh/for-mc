@@ -35,6 +35,16 @@ public class BlueprintConnectionHandler {
         return false;
     }
 
+    private boolean canConnect(NodeDefinition.PortType type1, NodeDefinition.PortType type2) {
+        if (type1 == NodeDefinition.PortType.EXEC || type2 == NodeDefinition.PortType.EXEC) {
+            return type1 == type2;
+        }
+        if (type1 == NodeDefinition.PortType.ANY || type2 == NodeDefinition.PortType.ANY) {
+            return true;
+        }
+        return type1 == type2;
+    }
+
     public boolean mouseReleased(double worldMouseX, double worldMouseY) {
         if (state.connectionStartNode != null) {
             for (GuiNode node : state.nodes) {
@@ -47,7 +57,7 @@ public class BlueprintConnectionHandler {
                         GuiNode.NodePort targetPort = node.inputs.get(i);
                         float[] pos = node.getPortPosition(i, true);
                         if (Math.abs(worldMouseX - pos[0]) < 10 && Math.abs(worldMouseY - pos[1]) < 10) {
-                            if (startPort != null && startPort.type == targetPort.type) {
+                            if (startPort != null && canConnect(startPort.type, targetPort.type)) {
                                 // Remove existing connections to this input if it's not EXEC
                                 if (targetPort.type != NodeDefinition.PortType.EXEC) {
                                     state.connections.removeIf(c -> c.to == node && c.toPort.equals(targetPort.name));
@@ -64,7 +74,7 @@ public class BlueprintConnectionHandler {
                         GuiNode.NodePort targetPort = node.outputs.get(i);
                         float[] pos = node.getPortPosition(i, false);
                         if (Math.abs(worldMouseX - pos[0]) < 10 && Math.abs(worldMouseY - pos[1]) < 10) {
-                            if (startPort != null && startPort.type == targetPort.type) {
+                            if (startPort != null && canConnect(startPort.type, targetPort.type)) {
                                 // Remove existing connections to the start input if it's not EXEC
                                 if (startPort.type != NodeDefinition.PortType.EXEC) {
                                     state.connections.removeIf(c -> c.to == state.connectionStartNode && c.toPort.equals(startPort.name));
