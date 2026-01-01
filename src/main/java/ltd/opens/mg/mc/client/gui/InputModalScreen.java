@@ -51,7 +51,7 @@ public class InputModalScreen extends Screen {
 
         if (mode == Mode.INPUT) {
             // Text Input Mode
-            this.editBox = new EditBox(this.font, startX + 10, startY + 30, width - 20, 20, Component.literal("Input"));
+            this.editBox = new EditBox(this.font, startX + 10, startY + 30, width - 20, 20, Component.translatable("gui.mgmc.modal.input_label"));
             this.editBox.setValue(initialValue);
             if (isNumeric) {
                 this.editBox.setFilter(s -> s.isEmpty() || s.matches("^-?\\d*\\.?\\d*$"));
@@ -59,12 +59,12 @@ public class InputModalScreen extends Screen {
             this.addRenderableWidget(this.editBox);
             this.setInitialFocus(this.editBox);
 
-            this.addRenderableWidget(Button.builder(Component.literal("Confirm"), (btn) -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.modal.confirm"), (btn) -> {
                 onConfirm.accept(editBox.getValue());
                 this.minecraft.setScreen(parent);
             }).bounds(startX + 10, startY + 55, 85, 20).build());
 
-            this.addRenderableWidget(Button.builder(Component.literal("Cancel"), (btn) -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.modal.cancel"), (btn) -> {
                 this.minecraft.setScreen(parent);
             }).bounds(startX + 105, startY + 55, 85, 20).build());
         } else {
@@ -82,7 +82,7 @@ public class InputModalScreen extends Screen {
                 }
             }
 
-            this.addRenderableWidget(Button.builder(Component.literal("Cancel"), (btn) -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.modal.cancel"), (btn) -> {
                 this.minecraft.setScreen(parent);
             }).bounds(startX + 10, startY + height - 25, width - 20, 20).build());
         }

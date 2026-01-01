@@ -49,7 +49,7 @@ public class BlueprintNodeHandler {
                                 
                                 Minecraft.getInstance().setScreen(new InputModalScreen(
                                     screen, 
-                                    "Select Type", 
+                                    Component.translatable("gui.mgmc.blueprint_editor.modal.select_type").getString(), 
                                     current, 
                                     false, 
                                     port.options,
@@ -79,7 +79,7 @@ public class BlueprintNodeHandler {
                                 
                                 Minecraft.getInstance().setScreen(new InputModalScreen(
                                     screen, 
-                                    "Enter " + port.displayName, 
+                                    Component.translatable("gui.mgmc.blueprint_editor.modal.enter_value", port.displayName).getString(), 
                                     initialText, 
                                     isNumeric,
                                     (newText) -> {

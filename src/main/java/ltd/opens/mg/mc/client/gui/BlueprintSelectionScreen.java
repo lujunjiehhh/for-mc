@@ -32,7 +32,7 @@ public class BlueprintSelectionScreen extends Screen {
     private boolean isRenaming = false;
 
     public BlueprintSelectionScreen() {
-        super(Component.literal("Select Blueprint"));
+        super(Component.translatable("gui.mgmc.blueprint_selection.title"));
     }
 
     @Override
@@ -49,11 +49,11 @@ public class BlueprintSelectionScreen extends Screen {
         int createX = (this.width - createWidth - 60) / 2;
         int createY = 35;
 
-        this.newBlueprintName = new EditBox(this.font, createX, createY, createWidth, createHeight, Component.literal("New Blueprint Name"));
-        this.newBlueprintName.setHint(Component.literal("New blueprint name..."));
+        this.newBlueprintName = new EditBox(this.font, createX, createY, createWidth, createHeight, Component.translatable("gui.mgmc.blueprint_selection.new_name_label"));
+        this.newBlueprintName.setHint(Component.translatable("gui.mgmc.blueprint_selection.new_name_hint"));
         this.addRenderableWidget(this.newBlueprintName);
 
-        this.createButton = Button.builder(Component.literal("Create"), b -> {
+        this.createButton = Button.builder(Component.translatable("gui.mgmc.blueprint_selection.create"), b -> {
             String name = this.newBlueprintName.getValue().trim();
             if (!name.isEmpty()) {
                 if (!name.endsWith(".json")) name += ".json";
@@ -71,7 +71,7 @@ public class BlueprintSelectionScreen extends Screen {
         int startX = (this.width - totalWidth) / 2;
         int buttonY = this.height - 40;
 
-        this.openButton = Button.builder(Component.literal("Open"), b -> {
+        this.openButton = Button.builder(Component.translatable("gui.mgmc.blueprint_selection.open"), b -> {
             if (this.list.getSelected() != null) {
                 Minecraft.getInstance().setScreen(new BlueprintScreen(this.list.getSelected().path));
             }
@@ -79,18 +79,18 @@ public class BlueprintSelectionScreen extends Screen {
         
         this.addRenderableWidget(this.openButton);
         
-        this.addRenderableWidget(Button.builder(Component.literal("Back"), b -> {
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_selection.back"), b -> {
             Minecraft.getInstance().setScreen(null);
         }).bounds(startX + buttonWidth + spacing, buttonY, buttonWidth, buttonHeight).build());
         
-        this.addRenderableWidget(Button.builder(Component.literal("Refresh"), b -> {
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_selection.refresh"), b -> {
             refreshFileList();
         }).bounds(startX + (buttonWidth + spacing) * 2, buttonY, buttonWidth, buttonHeight).build());
 
         refreshFileList();
 
         // Rename box (initially hidden)
-        this.renameBox = new EditBox(this.font, 0, 0, 100, 20, Component.literal("Rename"));
+        this.renameBox = new EditBox(this.font, 0, 0, 100, 20, Component.translatable("gui.mgmc.blueprint_selection.rename"));
         this.renameBox.setVisible(false);
         this.addRenderableWidget(this.renameBox);
     }
@@ -131,7 +131,7 @@ public class BlueprintSelectionScreen extends Screen {
         // guiGraphics.fill(0, 40, this.width, this.height - 60, 0x44000000);
         
         if (this.list != null && this.list.children().isEmpty()) {
-            guiGraphics.drawCenteredString(this.font, "No blueprints found.", this.width / 2, this.height / 2 - 10, 0xAAAAAA);
+            guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mgmc.blueprint_selection.no_blueprints"), this.width / 2, this.height / 2 - 10, 0xAAAAAA);
         }
 
         if (showMenu) {
@@ -154,12 +154,12 @@ public class BlueprintSelectionScreen extends Screen {
         // Rename Option
         boolean hoverRename = mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + 20;
         if (hoverRename) guiGraphics.fill(x + 1, y + 1, x + w - 1, y + 19, 0xFF404040);
-        guiGraphics.drawString(font, "Rename", x + 10, y + 6, 0xFFFFFFFF);
+        guiGraphics.drawString(font, Component.translatable("gui.mgmc.blueprint_selection.rename"), x + 10, y + 6, 0xFFFFFFFF);
 
         // Delete Option
         boolean hoverDelete = mouseX >= x && mouseX <= x + w && mouseY >= y + 20 && mouseY <= y + 40;
         if (hoverDelete) guiGraphics.fill(x + 1, y + 21, x + w - 1, y + 39, 0xFF404040);
-        guiGraphics.drawString(font, "Delete", x + 10, y + 26, 0xFFFF5555);
+        guiGraphics.drawString(font, Component.translatable("gui.mgmc.blueprint_selection.delete"), x + 10, y + 26, 0xFFFF5555);
     }
 
     @Override

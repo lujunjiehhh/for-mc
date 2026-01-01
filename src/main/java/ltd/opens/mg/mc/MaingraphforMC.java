@@ -71,10 +71,10 @@ public class MaingraphforMC {
                                 if (blueprint != null) {
                                     BlueprintEngine.execute(level, blueprint, "on_mgrun", eventName, args, triggerUuid, triggerName, pos.x, pos.y, pos.z, 0.0);
                                 } else {
-                                    context.getSource().sendFailure(Component.literal("Blueprint '" + blueprintName + "' not found."));
+                                    context.getSource().sendFailure(Component.translatable("command.mgmc.mgrun.blueprint_not_found", blueprintName));
                                 }
                             } catch (Exception e) {
-                                context.getSource().sendFailure(Component.literal("Failed to execute blueprint: " + e.getMessage()));
+                                context.getSource().sendFailure(Component.translatable("command.mgmc.mgrun.failed", e.getMessage()));
                             }
                             return 1;
                         })
@@ -92,10 +92,10 @@ public class MaingraphforMC {
                             if (blueprint != null) {
                                 BlueprintEngine.execute(level, blueprint, "on_mgrun", eventName, new String[0], triggerUuid, triggerName, pos.x, pos.y, pos.z, 0.0);
                             } else {
-                                context.getSource().sendFailure(Component.literal("Blueprint '" + blueprintName + "' not found."));
+                                context.getSource().sendFailure(Component.translatable("command.mgmc.mgrun.blueprint_not_found", blueprintName));
                             }
                         } catch (Exception e) {
-                            context.getSource().sendFailure(Component.literal("Failed to execute blueprint: " + e.getMessage()));
+                            context.getSource().sendFailure(Component.translatable("command.mgmc.mgrun.failed", e.getMessage()));
                         }
                         return 1;
                     })

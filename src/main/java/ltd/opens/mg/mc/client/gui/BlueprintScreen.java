@@ -17,7 +17,7 @@ public class BlueprintScreen extends Screen {
     private final BlueprintEventHandler eventHandler;
 
     public BlueprintScreen(Path dataFile) {
-        super(Component.literal("Blueprint Editor - " + dataFile.getFileName().toString()));
+        super(Component.translatable("gui.mgmc.blueprint_editor.title", dataFile.getFileName().toString()));
         this.dataFile = dataFile;
         this.eventHandler = new BlueprintEventHandler(state);
         BlueprintIO.load(this.dataFile, state.nodes, state.connections);
@@ -26,11 +26,11 @@ public class BlueprintScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.addRenderableWidget(Button.builder(Component.literal("Back"), (btn) -> Minecraft.getInstance().setScreen(new BlueprintSelectionScreen()))
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_editor.back"), (btn) -> Minecraft.getInstance().setScreen(new BlueprintSelectionScreen()))
             .bounds(5, 5, 40, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Save"), (btn) -> BlueprintIO.save(this.dataFile, state.nodes, state.connections))
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_editor.save"), (btn) -> BlueprintIO.save(this.dataFile, state.nodes, state.connections))
             .bounds(50, 5, 40, 20).build());
-        this.addRenderableWidget(Button.builder(Component.literal("Reset View"), (btn) -> state.resetView()).bounds(95, 5, 80, 20).build());
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_editor.reset_view"), (btn) -> state.resetView()).bounds(95, 5, 80, 20).build());
     }
 
     @Override
@@ -78,8 +78,8 @@ public class BlueprintScreen extends Screen {
         guiGraphics.pose().popMatrix();
 
         // UI Overlay
-        guiGraphics.drawString(font, "Nodes: " + state.nodes.size() + " | Connections: " + state.connections.size(), 5, height - 15, 0xFFAAAAAA, false);
-        guiGraphics.drawString(font, "Right click to add. Drag ports to connect. DEL to delete.", 150, 10, 0xFF888888, false);
+        guiGraphics.drawString(font, Component.translatable("gui.mgmc.blueprint_editor.stats", state.nodes.size(), state.connections.size()), 5, height - 15, 0xFFAAAAAA, false);
+        guiGraphics.drawString(font, Component.translatable("gui.mgmc.blueprint_editor.instructions"), 150, 10, 0xFF888888, false);
 
         if (state.showNodeMenu) {
             state.menu.renderNodeMenu(guiGraphics, font, mouseX, mouseY, state.menuX, state.menuY);
