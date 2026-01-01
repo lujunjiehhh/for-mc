@@ -29,7 +29,7 @@
   "node_category.mgmc.logic": "逻辑",
   "gui.mgmc.blueprint_editor.context_menu.delete": "删除节点",
   "gui.mgmc.blueprint_editor.context_menu.break_links": "断开所有连接",
-  "node.mgmc.on_mgrun.name": "运行主图",
+  "node.mgmc.on_mgrun.name": "当运行 /mgrun 命令时",
   "node.mgmc.on_player_move.name": "当玩家移动",
   "node.mgmc.print_chat.name": "打印到聊天栏",
   "node.mgmc.play_effect.name": "播放粒子效果",
