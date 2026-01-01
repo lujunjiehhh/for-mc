@@ -26,11 +26,7 @@ public class BlueprintScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_editor.back"), (btn) -> Minecraft.getInstance().setScreen(new BlueprintSelectionScreen()))
-            .bounds(5, 5, 40, 20).build());
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_editor.save"), (btn) -> BlueprintIO.save(this.dataFile, state.nodes, state.connections))
-            .bounds(50, 5, 40, 20).build());
-        this.addRenderableWidget(Button.builder(Component.translatable("gui.mgmc.blueprint_editor.reset_view"), (btn) -> state.resetView()).bounds(95, 5, 80, 20).build());
+        // Remove vanilla buttons, we'll use custom rendering and interaction
     }
 
     @Override
@@ -39,13 +35,13 @@ public class BlueprintScreen extends Screen {
         state.cursorTick++;
     }
 
+    private boolean isHovering(int mouseX, int mouseY, int x, int y, int w, int h) {
+        return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+    }
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         BlueprintRenderer.drawGrid(guiGraphics, this.width, this.height, state.panX, state.panY, state.zoom);
-
-        // Pre-calculate connection states only once if needed, or just less frequently
-        // For now, let's just make sure we don't do it inside the scaled pose if not needed
-        // but it's currently inside the node loop which is fine if culling works.
 
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(state.panX, state.panY);
@@ -54,7 +50,6 @@ public class BlueprintScreen extends Screen {
         BlueprintRenderer.drawConnections(guiGraphics, state.connections, this.width, this.height, state.panX, state.panY, state.zoom);
 
         for (GuiNode node : state.nodes) {
-            // Culling for nodes
             float sX = node.x * state.zoom + state.panX;
             float sY = node.y * state.zoom + state.panY;
             float sW = node.width * state.zoom;
@@ -64,8 +59,6 @@ public class BlueprintScreen extends Screen {
                 continue;
             }
             
-            // Only update if something changed? For now, the bottleneck was drawLine.
-            // But let's keep it optimized.
             node.updateConnectedState(state.connections);
             node.render(guiGraphics, this.font, mouseX, mouseY, state.panX, state.panY, state.zoom, state.connections, state.focusedNode, state.focusedPort);
         }
@@ -76,10 +69,36 @@ public class BlueprintScreen extends Screen {
         }
 
         guiGraphics.pose().popMatrix();
+        
+        // --- Modern Top Bar (Narrower) ---
+        int barHeight = 26;
+        guiGraphics.fill(0, 0, this.width, barHeight, 0xF0121212); 
+        guiGraphics.fill(0, barHeight, this.width, barHeight + 1, 0xFF2D2D2D); 
+        
+        // Custom Buttons Rendering
+        // Back Button
+        renderCustomButton(guiGraphics, mouseX, mouseY, 5, 3, 40, 20, "gui.mgmc.blueprint_editor.back");
+        
+        // Right side buttons
+        int rightX = this.width - 5;
+        // Reset View
+        rightX -= 70;
+        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 70, 20, "gui.mgmc.blueprint_editor.reset_view");
+        // Save
+        rightX -= 55;
+        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 50, 20, "gui.mgmc.blueprint_editor.save");
 
-        // UI Overlay
-        guiGraphics.drawString(font, Component.translatable("gui.mgmc.blueprint_editor.stats", state.nodes.size(), state.connections.size()), 5, height - 15, 0xFFAAAAAA, false);
-        guiGraphics.drawString(font, Component.translatable("gui.mgmc.blueprint_editor.instructions"), 150, 10, 0xFF888888, false);
+        // --- Bottom UI ---
+        // Stats (Bottom Left)
+        String statsText = Component.translatable("gui.mgmc.blueprint_editor.stats", state.nodes.size(), state.connections.size()).getString();
+        guiGraphics.fill(5, height - 18, 10 + font.width(statsText), height - 4, 0x88000000);
+        guiGraphics.drawString(font, statsText, 8, height - 15, 0xFFAAAAAA, false);
+        
+        // Title (Bottom Right)
+        String titleText = this.title.getString();
+        int titleW = font.width(titleText);
+        guiGraphics.fill(this.width - titleW - 10, height - 18, this.width - 5, height - 4, 0x88000000);
+        guiGraphics.drawString(font, titleText, this.width - titleW - 8, height - 15, 0xFFFFFFFF, false);
 
         if (state.showNodeMenu) {
             state.menu.renderNodeMenu(guiGraphics, font, mouseX, mouseY, state.menuX, state.menuY);
@@ -90,6 +109,19 @@ public class BlueprintScreen extends Screen {
         }
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+    }
+
+    private void renderCustomButton(GuiGraphics guiGraphics, int mouseX, int mouseY, int x, int y, int w, int h, String langKey) {
+        boolean hovered = isHovering(mouseX, mouseY, x, y, w, h);
+        int bgColor = hovered ? 0xFF3D3D3D : 0x00000000; // Transparent background when not hovered
+        if (bgColor != 0) {
+            guiGraphics.fill(x, y, x + w, y + h, bgColor);
+            guiGraphics.renderOutline(x, y, w, h, 0xFF555555);
+        }
+        
+        Component text = Component.translatable(langKey);
+        int textW = font.width(text);
+        guiGraphics.drawString(font, text, x + (w - textW) / 2, y + (h - 9) / 2, hovered ? 0xFFFFFFFF : 0xFFBBBBBB, false);
     }
 
     @Override
@@ -109,6 +141,35 @@ public class BlueprintScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDouble) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        
+        // Handle Top Bar Buttons
+        if (mouseY < 26) {
+            // Back
+            if (isHovering((int)mouseX, (int)mouseY, 5, 3, 40, 20)) {
+                Minecraft.getInstance().setScreen(new BlueprintSelectionScreen());
+                return true;
+            }
+            
+            int rightX = this.width - 5;
+            // Reset View
+            rightX -= 70;
+            if (isHovering((int)mouseX, (int)mouseY, rightX, 3, 70, 20)) {
+                state.resetView();
+                return true;
+            }
+            
+            // Save
+            rightX -= 55;
+            if (isHovering((int)mouseX, (int)mouseY, rightX, 3, 50, 20)) {
+                BlueprintIO.save(this.dataFile, state.nodes, state.connections);
+                return true;
+            }
+            
+            return true; // Clicked on top bar but not on buttons
+        }
+
         return eventHandler.mouseClicked(event, isDouble, font, this) || super.mouseClicked(event, isDouble);
     }
 

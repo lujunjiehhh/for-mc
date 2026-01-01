@@ -24,6 +24,9 @@ public class BlueprintEventHandler {
         double mouseY = event.y();
         int button = event.buttonInfo().button();
 
+        // Block all blueprint interactions if clicking the top bar
+        if (mouseY < 26) return false;
+
         // 1. Menu interactions (context menu or creation menu)
         if (menuHandler.mouseClicked(mouseX, mouseY, button)) return true;
 
