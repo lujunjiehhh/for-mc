@@ -47,7 +47,7 @@ public class GetEntityInfoHandler implements NodeHandler {
                     case "is_player": return String.valueOf(entity instanceof Player);
                     case "permission_level":
                         if (entity instanceof ServerPlayer serverPlayer && ctx.level != null) {
-                            return String.valueOf(ctx.level.getServer().getProfilePermissions(new NameAndId(serverPlayer.getUUID(), serverPlayer.getGameProfile().name())).level());
+                            return String.valueOf(ctx.level.getServer().getProfilePermissions(new NameAndId(serverPlayer.getUUID(), serverPlayer.getGameProfile().name())).level().id());
                         }
                         return "0";
                 }
