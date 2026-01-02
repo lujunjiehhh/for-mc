@@ -45,6 +45,11 @@ public class GetEntityInfoHandler implements NodeHandler {
                         return "0";
                     case "is_living": return String.valueOf(entity instanceof LivingEntity);
                     case "is_player": return String.valueOf(entity instanceof Player);
+                    case "is_online":
+                        if (ctx.level != null) {
+                            return String.valueOf(ctx.level.getServer().getPlayerList().getPlayer(uuid) != null);
+                        }
+                        return "false";
                     case "permission_level":
                         if (entity instanceof ServerPlayer serverPlayer && ctx.level != null) {
                             return String.valueOf(ctx.level.getServer().getProfilePermissions(new NameAndId(serverPlayer.getUUID(), serverPlayer.getGameProfile().name())).level().id());
@@ -83,6 +88,7 @@ public class GetEntityInfoHandler implements NodeHandler {
                 return "0";
             case "is_living":
             case "is_player":
+            case "is_online":
                 return "false";
             default:
                 return "";

@@ -112,6 +112,7 @@ public class NodeRegistry {
             .addOutput("max_health", "node.mgmc.get_entity_info.port.max_health", NodeDefinition.PortType.FLOAT, colorFloat)
             .addOutput("is_living", "node.mgmc.get_entity_info.port.is_living", NodeDefinition.PortType.BOOLEAN, colorBoolean)
             .addOutput("is_player", "node.mgmc.get_entity_info.port.is_player", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .addOutput("is_online", "node.mgmc.get_entity_info.port.is_online", NodeDefinition.PortType.BOOLEAN, colorBoolean)
             .addOutput("permission_level", "node.mgmc.get_entity_info.port.permission_level", NodeDefinition.PortType.FLOAT, colorFloat)
             .build());
 
@@ -218,6 +219,180 @@ public class NodeRegistry {
             .build());
 
         // Logic -> Math/Convert
+        register(new NodeDefinition.Builder("add_float", "node.mgmc.add_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("sub_float", "node.mgmc.sub_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("mul_float", "node.mgmc.mul_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("div_float", "node.mgmc.div_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("mod_float", "node.mgmc.mod_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("abs_float", "node.mgmc.abs_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("input", "node.mgmc.port.input", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("min_float", "node.mgmc.min_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("max_float", "node.mgmc.max_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("clamp_float", "node.mgmc.clamp_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("value", "node.mgmc.port.value", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("min", "node.mgmc.port.min", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("max", "node.mgmc.port.max", NodeDefinition.PortType.FLOAT, colorFloat, true, 1.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("round_float", "node.mgmc.round_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("input", "node.mgmc.port.input", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("floor_float", "node.mgmc.floor_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("input", "node.mgmc.port.input", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        register(new NodeDefinition.Builder("ceil_float", "node.mgmc.ceil_float.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("input", "node.mgmc.port.input", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        // Logic -> Comparison
+        register(new NodeDefinition.Builder("compare_eq", "node.mgmc.compare_eq.name")
+            .category("node_category.mgmc.logic.comparison")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("compare_neq", "node.mgmc.compare_neq.name")
+            .category("node_category.mgmc.logic.comparison")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("compare_gt", "node.mgmc.compare_gt.name")
+            .category("node_category.mgmc.logic.comparison")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("compare_gte", "node.mgmc.compare_gte.name")
+            .category("node_category.mgmc.logic.comparison")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("compare_lt", "node.mgmc.compare_lt.name")
+            .category("node_category.mgmc.logic.comparison")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("compare_lte", "node.mgmc.compare_lte.name")
+            .category("node_category.mgmc.logic.comparison")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        // Logic -> Boolean Logic
+        register(new NodeDefinition.Builder("logic_and", "node.mgmc.logic_and.name")
+            .category("node_category.mgmc.logic.boolean")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, true)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, true)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("logic_or", "node.mgmc.logic_or.name")
+            .category("node_category.mgmc.logic.boolean")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, false)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, false)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("logic_not", "node.mgmc.logic_not.name")
+            .category("node_category.mgmc.logic.boolean")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, false)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("logic_xor", "node.mgmc.logic_xor.name")
+            .category("node_category.mgmc.logic.boolean")
+            .color(0xFF888888)
+            .addInput("a", "node.mgmc.port.a", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, false)
+            .addInput("b", "node.mgmc.port.b", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, false)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
         register(new NodeDefinition.Builder("cast", "node.mgmc.cast.name")
             .category("node_category.mgmc.logic.math")
             .color(0xFF888888)
