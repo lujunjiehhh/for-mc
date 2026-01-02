@@ -35,6 +35,8 @@
   "node_category.mgmc.logic.math": "数学与转换",
   "node_category.mgmc.variable": "变量",
   "node_category.mgmc.variable.string": "字符串",
+  "node_category.mgmc.variable.float": "浮点数",
+  "node_category.mgmc.variable.boolean": "布尔值",
   "node_category.mgmc.variable.list": "列表",
   "gui.mgmc.blueprint_editor.context_menu.delete": "删除节点",
   "gui.mgmc.blueprint_editor.context_menu.break_links": "断开所有连接",
@@ -85,7 +87,6 @@
   "node.mgmc.switch.port.control": "控制变量",
   "node.mgmc.switch.port.default": "默认",
   "node.mgmc.switch.add_branch": "添加分支",
-
   "node.mgmc.for_loop.name": "有限循环",
   "node.mgmc.for_loop.port.start": "循环起始值",
   "node.mgmc.for_loop.port.end": "循环终止值",
@@ -93,11 +94,13 @@
   "node.mgmc.for_loop.port.loop_body": "循环体",
   "node.mgmc.for_loop.port.completed": "循环完成",
   "node.mgmc.for_loop.port.index": "当前循环值",
-
   "node.mgmc.break_loop.name": "跳出循环",
   "node.mgmc.break_loop.port.break": "跳出",
-
   "node.mgmc.string.name": "字符串",
+  "node.mgmc.float.name": "浮点数",
+  "node.mgmc.boolean.name": "布尔值",
+  "node.mgmc.get_variable.name": "获取变量",
+  "node.mgmc.set_variable.name": "设置变量",
   "node.mgmc.port.value": "值",
   "node.mgmc.port.output": "输出",
   "gui.mgmc.blueprint_editor.save_confirm.title": "蓝图已修改，是否保存？",

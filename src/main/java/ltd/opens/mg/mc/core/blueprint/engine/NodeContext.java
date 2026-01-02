@@ -2,6 +2,7 @@ package ltd.opens.mg.mc.core.blueprint.engine;
 
 import com.google.gson.JsonObject;
 import net.minecraft.world.level.Level;
+import java.util.HashMap;
 import java.util.Map;
 
 public class NodeContext {
@@ -15,6 +16,7 @@ public class NodeContext {
     public final double triggerZ;
     public final double triggerSpeed;
     public final Map<String, JsonObject> nodesMap;
+    public final Map<String, String> variables = new HashMap<>();
     public boolean breakRequested = false;
 
     public NodeContext(Level level, String eventName, String[] args, String triggerUuid, String triggerName, 

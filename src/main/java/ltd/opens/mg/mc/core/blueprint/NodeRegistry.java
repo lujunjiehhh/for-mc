@@ -168,5 +168,39 @@ public class NodeRegistry {
             .addInput("value", "node.mgmc.port.value", NodeDefinition.PortType.STRING, colorString, true, "")
             .addOutput("output", "node.mgmc.port.output", NodeDefinition.PortType.STRING, colorString)
             .build());
+
+        // Variable -> Float
+        register(new NodeDefinition.Builder("float", "node.mgmc.float.name")
+            .category("node_category.mgmc.variable.float")
+            .color(colorFloat)
+            .addInput("value", "node.mgmc.port.value", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
+            .addOutput("output", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
+            .build());
+
+        // Variable -> Boolean
+        register(new NodeDefinition.Builder("boolean", "node.mgmc.boolean.name")
+            .category("node_category.mgmc.variable.boolean")
+            .color(colorBoolean)
+            .addInput("value", "node.mgmc.port.value", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, true)
+            .addOutput("output", "node.mgmc.port.output", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        // Variable -> General
+        register(new NodeDefinition.Builder("get_variable", "node.mgmc.get_variable.name")
+            .category("node_category.mgmc.variable")
+            .color(0xFF44AA44)
+            .addInput("name", "node.mgmc.port.name", NodeDefinition.PortType.STRING, colorString, true, "my_var")
+            .addOutput("value", "node.mgmc.port.value", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .build());
+
+        register(new NodeDefinition.Builder("set_variable", "node.mgmc.set_variable.name")
+            .category("node_category.mgmc.variable")
+            .color(0xFF44AA44)
+            .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
+            .addInput("name", "node.mgmc.port.name", NodeDefinition.PortType.STRING, colorString, true, "my_var")
+            .addInput("value", "node.mgmc.port.value", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("value", "node.mgmc.port.value", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .build());
     }
 }

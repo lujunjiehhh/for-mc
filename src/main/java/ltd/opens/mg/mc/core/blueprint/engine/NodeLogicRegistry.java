@@ -97,5 +97,9 @@ public class NodeLogicRegistry {
         register("player_health", new PlayerHealthHandler());
         register("add_float", new AddFloatHandler());
         register("string", new StringHandler());
+        register("float", new FloatHandler());
+        register("boolean", new BooleanHandler());
+        register("get_variable", new GetVariableHandler());
+        register("set_variable", new SetVariableHandler());
     }
 }
