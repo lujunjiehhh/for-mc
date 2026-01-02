@@ -94,8 +94,8 @@ public class BlueprintEventHandler {
         return false;
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (menuHandler.mouseScrolled(mouseX, mouseY, scrollY)) return true;
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY, BlueprintScreen screen) {
+        if (menuHandler.mouseScrolled(mouseX, mouseY, screen.width, screen.height, scrollY)) return true;
         return viewHandler.mouseScrolled(mouseX, mouseY, scrollY);
     }
 

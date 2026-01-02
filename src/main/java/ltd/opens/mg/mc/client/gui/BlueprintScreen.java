@@ -178,7 +178,7 @@ public class BlueprintScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        return eventHandler.mouseScrolled(mouseX, mouseY, scrollX, scrollY) || super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return eventHandler.mouseScrolled(mouseX, mouseY, scrollX, scrollY, this) || super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override

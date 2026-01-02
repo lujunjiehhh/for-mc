@@ -56,17 +56,18 @@ public class NodeRegistry {
             .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
             .build());
 
-        // Function
+        // Action -> Player
         register(new NodeDefinition.Builder("print_chat", "node.mgmc.print_chat.name")
-            .category("node_category.mgmc.function")
+            .category("node_category.mgmc.action.player")
             .color(0xFF4488FF)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addInput("message", "node.mgmc.port.message", NodeDefinition.PortType.STRING, colorString, true, "Hello Chat")
             .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
             .build());
 
+        // Action -> World
         register(new NodeDefinition.Builder("play_effect", "node.mgmc.play_effect.name")
-            .category("node_category.mgmc.function")
+            .category("node_category.mgmc.action.world")
             .color(0xFF4488FF)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addInput("effect", "node.mgmc.play_effect.port.effect", NodeDefinition.PortType.STRING, colorString, true, "minecraft:happy_villager")
@@ -77,7 +78,7 @@ public class NodeRegistry {
             .build());
 
         register(new NodeDefinition.Builder("explosion", "node.mgmc.explosion.name")
-            .category("node_category.mgmc.function")
+            .category("node_category.mgmc.action.world")
             .color(0xFFFF4444)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addInput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.0)
@@ -87,16 +88,9 @@ public class NodeRegistry {
             .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
             .build());
 
-        register(new NodeDefinition.Builder("get_list_item", "node.mgmc.get_list_item.name")
-            .category("node_category.mgmc.function")
-            .color(0xFF44AA44)
-            .addInput("list", "node.mgmc.get_list_item.port.list", NodeDefinition.PortType.LIST, colorList)
-            .addInput("index", "node.mgmc.get_list_item.port.index", NodeDefinition.PortType.FLOAT, colorFloat, true, 0)
-            .addOutput("value", "node.mgmc.get_list_item.port.value", NodeDefinition.PortType.STRING, colorString)
-            .build());
-
+        // Action -> Entity
         register(new NodeDefinition.Builder("get_entity_info", "node.mgmc.get_entity_info.name")
-            .category("node_category.mgmc.function")
+            .category("node_category.mgmc.action.entity")
             .color(0xFF44AA44)
             .addInput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
             .addOutput("name", "node.mgmc.port.name", NodeDefinition.PortType.STRING, colorString)
@@ -111,9 +105,18 @@ public class NodeRegistry {
             .addOutput("is_player", "node.mgmc.get_entity_info.port.is_player", NodeDefinition.PortType.BOOLEAN, colorBoolean)
             .build());
 
-        // Logic
+        // Variable -> List
+        register(new NodeDefinition.Builder("get_list_item", "node.mgmc.get_list_item.name")
+            .category("node_category.mgmc.variable.list")
+            .color(0xFF44AA44)
+            .addInput("list", "node.mgmc.get_list_item.port.list", NodeDefinition.PortType.LIST, colorList)
+            .addInput("index", "node.mgmc.get_list_item.port.index", NodeDefinition.PortType.FLOAT, colorFloat, true, 0)
+            .addOutput("value", "node.mgmc.get_list_item.port.value", NodeDefinition.PortType.STRING, colorString)
+            .build());
+
+        // Logic -> Control
         register(new NodeDefinition.Builder("branch", "node.mgmc.branch.name")
-            .category("node_category.mgmc.logic")
+            .category("node_category.mgmc.logic.control")
             .color(0xFF888888)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addInput("condition", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean, true, true)
@@ -121,17 +124,8 @@ public class NodeRegistry {
             .addOutput("false", "node.mgmc.port.false", NodeDefinition.PortType.EXEC, colorExec)
             .build());
 
-        register(new NodeDefinition.Builder("cast", "node.mgmc.cast.name")
-            .category("node_category.mgmc.logic")
-            .color(0xFF888888)
-            .addInput("input", "node.mgmc.cast.port.input", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
-            .addInput("to_type", "node.mgmc.cast.port.to_type", NodeDefinition.PortType.STRING, colorString, true, "STRING", 
-                new String[]{"STRING", "FLOAT", "BOOLEAN", "UUID", "INT", "LIST"})
-            .addOutput("output", "node.mgmc.cast.port.output", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
-            .build());
-
         register(new NodeDefinition.Builder("switch", "node.mgmc.switch.name")
-            .category("node_category.mgmc.logic")
+            .category("node_category.mgmc.logic.control")
             .color(0xFF888888)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addInput("control", "node.mgmc.switch.port.control", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
@@ -139,7 +133,7 @@ public class NodeRegistry {
             .build());
 
         register(new NodeDefinition.Builder("for_loop", "node.mgmc.for_loop.name")
-            .category("node_category.mgmc.logic")
+            .category("node_category.mgmc.logic.control")
             .color(0xFF888888)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addInput("start", "node.mgmc.for_loop.port.start", NodeDefinition.PortType.FLOAT, colorFloat, true, 0)
@@ -151,14 +145,25 @@ public class NodeRegistry {
             .build());
 
         register(new NodeDefinition.Builder("break_loop", "node.mgmc.break_loop.name")
-            .category("node_category.mgmc.logic")
+            .category("node_category.mgmc.logic.control")
             .color(0xFF888888)
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addOutput("break", "node.mgmc.break_loop.port.break", NodeDefinition.PortType.EXEC, colorExec)
             .build());
 
+        // Logic -> Math/Convert
+        register(new NodeDefinition.Builder("cast", "node.mgmc.cast.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("input", "node.mgmc.cast.port.input", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .addInput("to_type", "node.mgmc.cast.port.to_type", NodeDefinition.PortType.STRING, colorString, true, "STRING", 
+                new String[]{"STRING", "FLOAT", "BOOLEAN", "UUID", "INT", "LIST"})
+            .addOutput("output", "node.mgmc.cast.port.output", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .build());
+
+        // Variable -> String
         register(new NodeDefinition.Builder("string", "node.mgmc.string.name")
-            .category("node_category.mgmc.logic")
+            .category("node_category.mgmc.variable.string")
             .color(colorString)
             .addInput("value", "node.mgmc.port.value", NodeDefinition.PortType.STRING, colorString, true, "")
             .addOutput("output", "node.mgmc.port.output", NodeDefinition.PortType.STRING, colorString)

@@ -91,9 +91,9 @@ public class BlueprintMenuHandler {
         return false;
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, int screenWidth, int screenHeight, double amount) {
         if (state.showNodeMenu) {
-            state.menu.mouseScrolled(mouseX, mouseY, amount);
+            state.menu.mouseScrolled(mouseX, mouseY, state.menuX, state.menuY, screenWidth, screenHeight, amount);
             return true;
         }
         return false;
