@@ -8,7 +8,8 @@ import java.util.UUID;
 public class TypeConverter {
 
     public static String cast(String value, String targetType) {
-        if (value == null) return "";
+        if (value == null) value = "";
+        if (targetType == null) return value;
         
         targetType = targetType.toUpperCase();
         
@@ -18,6 +19,7 @@ public class TypeConverter {
                 
             case "FLOAT":
                 try {
+                    if (value.isEmpty()) return "0.0";
                     // 处理可能的科学计数法或非标准格式
                     return String.valueOf(Double.parseDouble(value));
                 } catch (Exception e) {
@@ -27,10 +29,12 @@ public class TypeConverter {
             case "BOOLEAN":
                 if (value.equalsIgnoreCase("true") || value.equals("1")) return "true";
                 if (value.equalsIgnoreCase("false") || value.equals("0")) return "false";
-                return String.valueOf(!value.isEmpty() && !value.equalsIgnoreCase("null"));
+                // 只有明确的 true 相关值才返回 true，避免意外
+                return "false";
                 
             case "UUID":
                 try {
+                    if (value.isEmpty()) return "";
                     return UUID.fromString(value).toString();
                 } catch (Exception e) {
                     return "";
@@ -38,13 +42,14 @@ public class TypeConverter {
                 
             case "INT":
                 try {
-                    return String.valueOf((int) Double.parseDouble(value));
+                    if (value.isEmpty()) return "0";
+                    return String.valueOf((int) Math.round(Double.parseDouble(value)));
                 } catch (Exception e) {
                     return "0";
                 }
 
             case "LIST":
-                // 确保符合列表格式（用 | 分隔）
+                // 列表底层就是字符串，确保不为 null 即可
                 return value;
 
             default:

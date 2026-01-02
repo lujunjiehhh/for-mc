@@ -9,8 +9,13 @@ public class GetVariableHandler implements NodeHandler {
     @Override
     public String getValue(JsonObject node, String pinId, NodeContext ctx) {
         if (pinId.equals("value")) {
-            String name = NodeLogicRegistry.evaluateInput(node, "name", ctx);
-            return ctx.variables.getOrDefault(name, "");
+            try {
+                String name = NodeLogicRegistry.evaluateInput(node, "name", ctx);
+                if (name == null || name.trim().isEmpty()) return "";
+                return ctx.variables.getOrDefault(name.trim(), "");
+            } catch (Exception e) {
+                return "";
+            }
         }
         return "";
     }
