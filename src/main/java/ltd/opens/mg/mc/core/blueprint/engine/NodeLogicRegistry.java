@@ -66,6 +66,7 @@ public class NodeLogicRegistry {
                 if (type != null) {
                     NodeHandler handler = get(type);
                     if (handler != null) {
+                        ctx.lastTriggeredPin = target.has("socket") ? target.get("socket").getAsString() : "exec";
                         handler.execute(targetNode, ctx);
                     }
                 }

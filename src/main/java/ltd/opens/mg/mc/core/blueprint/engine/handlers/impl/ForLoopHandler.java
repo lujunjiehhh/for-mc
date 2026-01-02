@@ -8,6 +8,12 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 public class ForLoopHandler implements NodeHandler {
     @Override
     public void execute(JsonObject node, NodeContext ctx) {
+        // 如果触发的是 break 入参，则请求中断
+        if ("break".equals(ctx.lastTriggeredPin)) {
+            ctx.breakRequested = true;
+            return;
+        }
+
         String startStr = NodeLogicRegistry.evaluateInput(node, "start", ctx);
         String endStr = NodeLogicRegistry.evaluateInput(node, "end", ctx);
         
