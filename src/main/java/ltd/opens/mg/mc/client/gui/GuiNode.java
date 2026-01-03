@@ -57,7 +57,7 @@ public class GuiNode {
     private void updateSize(net.minecraft.client.gui.Font font) {
         // Calculate height
         int maxPorts = Math.max(inputs.size(), outputs.size());
-        boolean hasAddButton = typeId.equals("switch");
+        boolean hasAddButton = typeId.equals("switch") || typeId.equals("string_combine");
         this.height = Math.max(40, headerHeight + 10 + maxPorts * 15 + (hasAddButton ? 25 : 5));
 
         // Calculate width
@@ -70,17 +70,24 @@ public class GuiNode {
             if (p.hasInput) {
                 w += 55; // Space for input field
             }
+            if (isDynamicPort(p)) {
+                w += 15; // Space for remove button
+            }
             maxInputW = Math.max(maxInputW, w);
         }
 
         float maxOutputW = 0;
         for (NodePort p : outputs) {
             float w = 10 + font.width(Component.translatable(p.displayName));
+            if (isDynamicPort(p)) {
+                w += 15; // Space for remove button
+            }
             maxOutputW = Math.max(maxOutputW, w);
         }
         
         if (hasAddButton) {
-            float btnW = font.width(Component.translatable("node.mgmc.switch.add_branch")) + 20;
+            String btnKey = typeId.equals("switch") ? "node.mgmc.switch.add_branch" : "node.mgmc.string_combine.add_input";
+            float btnW = font.width(Component.translatable(btnKey)) + 20;
             minWidth = Math.max(minWidth, btnW);
         }
 
@@ -178,8 +185,8 @@ public class GuiNode {
                 renderPort(guiGraphics, font, outputs.get(i), (int) (x + width), (int) (y + headerHeight + 10 + i * 15), false, connections, focusedNode, focusedPort, zoom);
             }
             
-            // Add Branch Button for Switch Node
-            if (typeId.equals("switch")) {
+            // Add Branch Button for Switch Node / Add Input for String Combine
+            if (typeId.equals("switch") || typeId.equals("string_combine")) {
                 int btnX = (int) x + 5;
                 int btnY = (int) (y + height - 20);
                 int btnW = (int) width - 10;
@@ -190,7 +197,8 @@ public class GuiNode {
                 guiGraphics.fill(btnX, btnY, btnX + btnW, btnY + btnH, hovered ? 0xFF444444 : 0xFF333333);
                 guiGraphics.renderOutline(btnX, btnY, btnW, btnH, 0xFF555555);
                 
-                Component btnText = Component.translatable("node.mgmc.switch.add_branch");
+                String btnKey = typeId.equals("switch") ? "node.mgmc.switch.add_branch" : "node.mgmc.string_combine.add_input";
+                Component btnText = Component.translatable(btnKey);
                 guiGraphics.drawString(font, btnText, btnX + (btnW - font.width(btnText)) / 2, btnY + 4, 0xFFFFFFFF, false);
             }
         }
@@ -211,11 +219,17 @@ public class GuiNode {
     }
 
     public boolean isDynamicPort(NodePort port) {
-        if (port.isInput) return false;
-        for (NodeDefinition.PortDefinition defPort : definition.outputs()) {
-            if (defPort.id().equals(port.id)) return false;
+        if (port.isInput) {
+            for (NodeDefinition.PortDefinition defPort : definition.inputs()) {
+                if (defPort.id().equals(port.id)) return false;
+            }
+            return true;
+        } else {
+            for (NodeDefinition.PortDefinition defPort : definition.outputs()) {
+                if (defPort.id().equals(port.id)) return false;
+            }
+            return true;
         }
-        return true;
     }
 
     private void renderPort(GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, NodePort port, int px, int py, boolean isInput, List<GuiConnection> connections, GuiNode focusedNode, String focusedPort, float zoom) {
@@ -307,6 +321,18 @@ public class GuiNode {
                         guiGraphics.drawString(font, renderText, (int)inputX + 2, (int)inputY + 1, 0xFFCCCCCC, false);
                     }
                 }
+
+                // Show remove button for dynamic ports
+                if (isDynamicPort(port) && zoom > 0.6f) {
+                    int rx;
+                    if (port.hasInput && !isConnected) {
+                        rx = (int) (px + 8 + font.width(Component.translatable(port.displayName)) + 2 + 50 + 4);
+                    } else {
+                        rx = (int) (px + 8 + font.width(Component.translatable(port.displayName)) + 4);
+                    }
+                    int ry = py - 4;
+                    guiGraphics.drawString(font, "×", rx, ry, 0xFFFF5555, false);
+                }
             } else {
                 guiGraphics.drawString(font, Component.translatable(port.displayName), px - 8 - font.width(Component.translatable(port.displayName)), py - 1, 0xFFAAAAAA, false);
                 
@@ -325,6 +351,7 @@ public class GuiNode {
     }
 
     public String getRemovePortAt(double worldMouseX, double worldMouseY, net.minecraft.client.gui.Font font) {
+        // Check outputs
         for (int i = 0; i < outputs.size(); i++) {
             NodePort port = outputs.get(i);
             if (isDynamicPort(port)) {
@@ -336,11 +363,29 @@ public class GuiNode {
                 }
             }
         }
+        // Check inputs
+        for (int i = 0; i < inputs.size(); i++) {
+            NodePort port = inputs.get(i);
+            if (isDynamicPort(port)) {
+                float[] pos = getPortPosition(i, true);
+                // For inputs, the remove button is to the right of the label/input box
+                int rx;
+                if (port.hasInput && !port.isConnected) {
+                    rx = (int) (pos[0] + 8 + font.width(Component.translatable(port.displayName)) + 2 + 50 + 4);
+                } else {
+                    rx = (int) (pos[0] + 8 + font.width(Component.translatable(port.displayName)) + 4);
+                }
+                int ry = (int)pos[1] - 4;
+                if (worldMouseX >= rx && worldMouseX <= rx + 8 && worldMouseY >= ry && worldMouseY <= ry + 8) {
+                    return port.id;
+                }
+            }
+        }
         return null;
     }
 
     public boolean isMouseOverAddButton(double worldMouseX, double worldMouseY) {
-        if (!typeId.equals("switch")) return false;
+        if (!typeId.equals("switch") && !typeId.equals("string_combine")) return false;
         int btnX = (int) x + 5;
         int btnY = (int) (y + height - 20);
         int btnW = (int) width - 10;

@@ -26,8 +26,8 @@ public class BlueprintIO {
                 nodeObj.addProperty("type", node.typeId);
                 
                 JsonObject inputs = new JsonObject();
-                for (NodeDefinition.PortDefinition port : node.definition.inputs()) {
-                    GuiConnection conn = findConnectionTo(node, port.id(), connections);
+                for (GuiNode.NodePort port : node.inputs) {
+                    GuiConnection conn = findConnectionTo(node, port.id, connections);
                     JsonObject input = new JsonObject();
                     if (conn != null) {
                         input.addProperty("type", "link");
@@ -35,10 +35,14 @@ public class BlueprintIO {
                         input.addProperty("socket", conn.fromPort);
                     } else {
                         input.addProperty("type", "value");
-                        JsonElement val = node.inputValues.get(port.id());
-                        input.add("value", val != null ? val : GSON.toJsonTree(port.defaultValue()));
+                        JsonElement val = node.inputValues.get(port.id);
+                        if (val != null) {
+                            input.add("value", val);
+                        } else {
+                            input.add("value", GSON.toJsonTree(port.defaultValue != null ? port.defaultValue : ""));
+                        }
                     }
-                    inputs.add(port.id(), input);
+                    inputs.add(port.id, input);
                 }
                 nodeObj.add("inputs", inputs);
 
@@ -92,6 +96,29 @@ public class BlueprintIO {
                 if (dynamicOutputs.size() > 0) {
                     nodeObj.add("dynamicOutputs", dynamicOutputs);
                 }
+
+                // Save dynamic inputs (like for string_combine node)
+                JsonArray dynamicInputs = new JsonArray();
+                for (GuiNode.NodePort port : node.inputs) {
+                    boolean isDefault = false;
+                    for (NodeDefinition.PortDefinition defPort : node.definition.inputs()) {
+                        if (defPort.id().equals(port.id)) {
+                            isDefault = true;
+                            break;
+                        }
+                    }
+                    if (!isDefault) {
+                        JsonObject pObj = new JsonObject();
+                        pObj.addProperty("id", port.id);
+                        pObj.addProperty("name", port.displayName);
+                        pObj.addProperty("type", port.type.name());
+                        pObj.addProperty("hasInput", port.hasInput);
+                        dynamicInputs.add(pObj);
+                    }
+                }
+                if (dynamicInputs.size() > 0) {
+                    nodeObj.add("dynamicInputs", dynamicInputs);
+                }
                 
                 nodesArray.add(nodeObj);
             }
@@ -143,8 +170,8 @@ public class BlueprintIO {
             if (ui.has("nodes")) {
                 for (JsonElement e : ui.getAsJsonArray("nodes")) {
                     JsonObject obj = e.getAsJsonObject();
-                    String type = obj.has("defId") ? obj.get("defId").getAsString() : obj.get("type").getAsString();
-                    NodeDefinition def = NodeRegistry.get(type);
+                    String nodeTypeId = obj.has("defId") ? obj.get("defId").getAsString() : obj.get("type").getAsString();
+                    NodeDefinition def = NodeRegistry.get(nodeTypeId);
                     if (def != null) {
                         GuiNode node = new GuiNode(def, obj.get("x").getAsFloat(), obj.get("y").getAsFloat());
                         node.id = obj.get("id").getAsString();
@@ -154,11 +181,27 @@ public class BlueprintIO {
                         if (obj.has("dynamicOutputs")) {
                             for (JsonElement p : obj.getAsJsonArray("dynamicOutputs")) {
                                 JsonObject pObj = p.getAsJsonObject();
+                                NodeDefinition.PortType portType = NodeDefinition.PortType.valueOf(pObj.get("type").getAsString());
                                 node.addOutput(
                                     pObj.get("id").getAsString(),
                                     pObj.get("name").getAsString(),
-                                    NodeDefinition.PortType.valueOf(pObj.get("type").getAsString()),
-                                    0xFFFFFFFF
+                                    portType,
+                                    getPortColor(portType)
+                                );
+                            }
+                        }
+                        if (obj.has("dynamicInputs")) {
+                            for (JsonElement p : obj.getAsJsonArray("dynamicInputs")) {
+                                JsonObject pObj = p.getAsJsonObject();
+                                NodeDefinition.PortType portType = NodeDefinition.PortType.valueOf(pObj.get("type").getAsString());
+                                node.addInput(
+                                    pObj.get("id").getAsString(),
+                                    pObj.get("name").getAsString(),
+                                    portType,
+                                    getPortColor(portType),
+                                    pObj.has("hasInput") && pObj.get("hasInput").getAsBoolean(),
+                                    "",
+                                    null
                                 );
                             }
                         }
@@ -185,6 +228,19 @@ public class BlueprintIO {
             }
         } catch (Exception e) {
             MaingraphforMC.LOGGER.error("Failed to load blueprint", e);
+        }
+    }
+
+    private static int getPortColor(NodeDefinition.PortType type) {
+        switch (type) {
+            case EXEC: return 0xFFFFFFFF;
+            case STRING: return 0xFFDA00DA;
+            case FLOAT: return 0xFF36CF36;
+            case BOOLEAN: return 0xFF920101;
+            case LIST: return 0xFFFFCC00;
+            case UUID: return 0xFF55FF55;
+            case ANY: return 0xFFAAAAAA;
+            default: return 0xFFFFFFFF;
         }
     }
 }

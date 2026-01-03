@@ -444,6 +444,20 @@ public class NodeRegistry {
             .addOutput("result", "node.mgmc.port.output", NodeDefinition.PortType.FLOAT, colorFloat)
             .build());
 
+        register(new NodeDefinition.Builder("random_bool", "node.mgmc.random_bool.name")
+            .category("node_category.mgmc.logic.math")
+            .color(0xFF888888)
+            .addInput("chance", "node.mgmc.random_bool.port.chance", NodeDefinition.PortType.FLOAT, colorFloat, true, 0.5)
+            .addOutput("result", "node.mgmc.port.condition", NodeDefinition.PortType.BOOLEAN, colorBoolean)
+            .build());
+
+        register(new NodeDefinition.Builder("random_list_item", "node.mgmc.random_list_item.name")
+            .category("node_category.mgmc.variable.list")
+            .color(0xFF44AA44)
+            .addInput("list", "node.mgmc.port.list", NodeDefinition.PortType.LIST, colorList)
+            .addOutput("item", "node.mgmc.port.value", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
+            .build());
+
         // Logic -> Comparison
         register(new NodeDefinition.Builder("compare_eq", "node.mgmc.compare_eq.name")
             .category("node_category.mgmc.logic.comparison")
@@ -547,6 +561,12 @@ public class NodeRegistry {
             .color(colorString)
             .addInput("a", "node.mgmc.string_concat.port.a", NodeDefinition.PortType.STRING, colorString)
             .addInput("b", "node.mgmc.string_concat.port.b", NodeDefinition.PortType.STRING, colorString)
+            .addOutput("output", "node.mgmc.port.output", NodeDefinition.PortType.STRING, colorString)
+            .build());
+
+        register(new NodeDefinition.Builder("string_combine", "node.mgmc.string_combine.name")
+            .category("node_category.mgmc.variable.string")
+            .color(colorString)
             .addOutput("output", "node.mgmc.port.output", NodeDefinition.PortType.STRING, colorString)
             .build());
 

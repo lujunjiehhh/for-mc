@@ -20,8 +20,15 @@ public class BlueprintNodeHandler {
         for (GuiNode node : state.nodes) {
             String portId = node.getRemovePortAt(worldMouseX, worldMouseY, font);
             if (portId != null) {
-                node.outputs.removeIf(p -> p.id.equals(portId));
-                state.connections.removeIf(c -> c.from == node && c.fromPort.equals(portId));
+                // Determine if it's an input or output port
+                boolean isInput = node.getPortByName(portId, true) != null;
+                if (isInput) {
+                    node.inputs.removeIf(p -> p.id.equals(portId));
+                    state.connections.removeIf(c -> c.to == node && c.toPort.equals(portId));
+                } else {
+                    node.outputs.removeIf(p -> p.id.equals(portId));
+                    state.connections.removeIf(c -> c.from == node && c.fromPort.equals(portId));
+                }
                 state.markDirty();
                 return true;
             }
@@ -115,21 +122,39 @@ public class BlueprintNodeHandler {
         for (int i = state.nodes.size() - 1; i >= 0; i--) {
             GuiNode node = state.nodes.get(i);
             if (node.isMouseOverAddButton(worldMouseX, worldMouseY)) {
-                // Add new branch to switch node
-                Minecraft.getInstance().setScreen(new InputModalScreen(
-                    screen,
-                    Component.translatable("gui.mgmc.modal.enter_value", Component.translatable("node.mgmc.switch.name")).getString(),
-                    "",
-                    false,
-                    (newText) -> {
-                         if (newText != null && !newText.isEmpty()) {
-                             if (node.getPortByName(newText, false) == null) {
-                                 node.addOutput(newText, newText, NodeDefinition.PortType.EXEC, 0xFFFFFFFF);
-                                 state.markDirty();
+                if (node.typeId.equals("switch")) {
+                    // Add new branch to switch node
+                    Minecraft.getInstance().setScreen(new InputModalScreen(
+                        screen,
+                        Component.translatable("gui.mgmc.modal.enter_value", Component.translatable("node.mgmc.switch.name")).getString(),
+                        "",
+                        false,
+                        (newText) -> {
+                             if (newText != null && !newText.isEmpty()) {
+                                 if (node.getPortByName(newText, false) == null) {
+                                     node.addOutput(newText, newText, NodeDefinition.PortType.EXEC, 0xFFFFFFFF);
+                                     state.markDirty();
+                                 }
                              }
                          }
-                     }
-                ));
+                    ));
+                } else if (node.typeId.equals("string_combine")) {
+                    // Add new input to string combine node
+                    int maxIndex = -1;
+                    for (GuiNode.NodePort port : node.inputs) {
+                        if (port.id.startsWith("input_")) {
+                            try {
+                                int idx = Integer.parseInt(port.id.substring(6));
+                                if (idx > maxIndex) maxIndex = idx;
+                            } catch (NumberFormatException ignored) {}
+                        }
+                    }
+                    int nextIndex = maxIndex + 1;
+                    String portId = "input_" + nextIndex;
+                    String displayName = "input " + nextIndex;
+                    node.addInput(portId, displayName, NodeDefinition.PortType.STRING, 0xFFBBBBBB, true, "", null);
+                    state.markDirty();
+                }
                 return true;
             }
             if (node.isMouseOverHeader(worldMouseX, worldMouseY)) {

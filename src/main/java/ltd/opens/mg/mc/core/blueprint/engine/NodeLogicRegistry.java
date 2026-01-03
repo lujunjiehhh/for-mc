@@ -104,6 +104,7 @@ public class NodeLogicRegistry {
         register("list_join", new ListJoinHandler());
         register("string_split", new StringSplitHandler());
         register("string_concat", new StringConcatHandler());
+        register("string_combine", new StringCombineHandler());
         register("string_length", new StringLengthHandler());
         register("string_contains", new StringContainsHandler());
         register("string_replace", new StringReplaceHandler());
@@ -136,6 +137,8 @@ public class NodeLogicRegistry {
         register("ceil_float", new CeilFloatHandler());
         register("random_float", new RandomFloatHandler());
         register("random_int", new RandomIntHandler());
+        register("random_bool", new RandomBoolHandler());
+        register("random_list_item", new RandomListItemHandler());
         
         // Comparison
         register("compare_eq", new CompareFloatHandler("eq"));
