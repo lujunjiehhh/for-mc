@@ -15,7 +15,7 @@ public class NodeRegistry {
         return REGISTRY.get(id);
     }
 
-    public static Collection<NodeDefinition> getAll() {
+    public static Collection<NodeDefinition> getAllDefinitions() {
         return REGISTRY.values();
     }
 

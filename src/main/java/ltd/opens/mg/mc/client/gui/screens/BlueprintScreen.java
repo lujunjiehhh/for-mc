@@ -22,6 +22,12 @@ public class BlueprintScreen extends Screen {
         super(Component.translatable("gui.mgmc.blueprint_editor.title", dataFile.getFileName().toString()));
         this.dataFile = dataFile;
         this.eventHandler = new BlueprintEventHandler(state);
+        
+        // Special Case: "wwssadadab" - Lock blueprint
+        if (dataFile.getFileName().toString().startsWith("wwssadadab")) {
+            state.readOnly = true;
+        }
+
         BlueprintIO.load(this.dataFile, state.nodes, state.connections);
     }
 
@@ -97,7 +103,9 @@ public class BlueprintScreen extends Screen {
         
         // Save
         rightX -= 55;
-        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 50, 20, "gui.mgmc.blueprint_editor.save");
+        if (!state.readOnly) {
+            renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 50, 20, "gui.mgmc.blueprint_editor.save");
+        }
 
         // --- Bottom UI ---
         // Stats (Bottom Left)
@@ -227,7 +235,7 @@ public class BlueprintScreen extends Screen {
             
             // Save
             rightX -= 55;
-            if (isHovering((int)mouseX, (int)mouseY, rightX, 3, 50, 20)) {
+            if (!state.readOnly && isHovering((int)mouseX, (int)mouseY, rightX, 3, 50, 20)) {
                 BlueprintIO.save(this.dataFile, state.nodes, state.connections);
                 state.isDirty = false;
                 state.showNotification(Component.translatable("gui.mgmc.blueprint_editor.saved").getString());

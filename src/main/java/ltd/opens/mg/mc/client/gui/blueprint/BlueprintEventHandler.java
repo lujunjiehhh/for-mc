@@ -30,8 +30,21 @@ public class BlueprintEventHandler {
         // Block all blueprint interactions if clicking the top bar
         if (mouseY < 26) return false;
 
+        // Block all modifications if in read-only mode
+        if (state.readOnly) {
+            // Only allow panning (middle mouse or right click drag) and zooming
+            if (button != 2 && button != 1) {
+                // Allow left click for panning start if it's the only way, but usually it's button 2 or 1
+                // For now, let's just allow panning logic to run
+            }
+        }
+
         // 1. Menu interactions (context menu or creation menu)
-        if (menuHandler.mouseClicked(mouseX, mouseY, button, screen.width, screen.height)) return true;
+        if (state.readOnly) {
+            // Skip node menu and context menu in read-only
+        } else {
+            if (menuHandler.mouseClicked(mouseX, mouseY, button, screen.width, screen.height)) return true;
+        }
 
         // 2. View interactions (panning start)
         if (viewHandler.mouseClicked(mouseX, mouseY, button)) return true;
@@ -44,11 +57,13 @@ public class BlueprintEventHandler {
             state.focusedNode = null;
             state.focusedPort = null;
             
-            // 3. Connection interactions (port click start)
-            if (connectionHandler.mouseClicked(worldMouseX, worldMouseY)) return true;
+            if (!state.readOnly) {
+                // 3. Connection interactions (port click start)
+                if (connectionHandler.mouseClicked(worldMouseX, worldMouseY)) return true;
 
-            // 4. Node interactions (input box or header drag start)
-            if (nodeHandler.mouseClicked(worldMouseX, worldMouseY, font, screen)) return true;
+                // 4. Node interactions (input box or header drag start)
+                if (nodeHandler.mouseClicked(worldMouseX, worldMouseY, font, screen)) return true;
+            }
         }
 
         return false;
@@ -60,8 +75,9 @@ public class BlueprintEventHandler {
         int button = event.buttonInfo().button();
 
         // 1. View interactions (panning end)
-        // If viewHandler returns false for button 1, it means the drag was short enough to be a click
         if (viewHandler.mouseReleased(mouseX, mouseY, button)) return true;
+
+        if (state.readOnly) return false;
 
         // 2. Menu interactions (open context menu on right click release)
         if (menuHandler.mouseReleased(mouseX, mouseY, button, screen.width, screen.height)) return true;
@@ -86,6 +102,8 @@ public class BlueprintEventHandler {
         // 1. View interactions (panning drag)
         if (viewHandler.mouseDragged(mouseX, mouseY)) return true;
 
+        if (state.readOnly) return false;
+
         // World coordinates for other interactions
         double worldMouseX = (mouseX - state.panX) / state.zoom;
         double worldMouseY = (mouseY - state.panY) / state.zoom;
@@ -102,11 +120,13 @@ public class BlueprintEventHandler {
     }
 
     public boolean keyPressed(KeyEvent event) {
+        if (state.readOnly) return false;
         if (menuHandler.keyPressed(event.key())) return true;
         return nodeHandler.keyPressed(event.key());
     }
 
     public boolean charTyped(CharacterEvent event) {
+        if (state.readOnly) return false;
         return menuHandler.charTyped(event);
     }
 }

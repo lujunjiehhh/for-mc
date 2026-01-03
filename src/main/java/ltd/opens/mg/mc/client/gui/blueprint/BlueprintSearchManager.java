@@ -43,7 +43,7 @@ public class BlueprintSearchManager {
         List<SearchResult> results = new ArrayList<>();
 
         // 1. Process Nodes
-        for (NodeDefinition def : NodeRegistry.getAll()) {
+        for (NodeDefinition def : NodeRegistry.getAllDefinitions()) {
             String localizedName = Component.translatable(def.name()).getString().toLowerCase();
             String localizedCat = Component.translatable(def.category()).getString().toLowerCase();
             String rawName = def.name().toLowerCase();
@@ -62,7 +62,7 @@ public class BlueprintSearchManager {
 
         // 2. Process Categories
         Set<String> categories = new HashSet<>();
-        for (NodeDefinition def : NodeRegistry.getAll()) {
+        for (NodeDefinition def : NodeRegistry.getAllDefinitions()) {
             String cat = def.category();
             String[] parts = cat.split("\\.");
             StringBuilder current = new StringBuilder();

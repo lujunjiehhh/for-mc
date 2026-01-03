@@ -36,6 +36,7 @@ public class BlueprintState {
     public boolean isDirty = false;
     public String notificationMessage = null;
     public int notificationTimer = 0;
+    public boolean readOnly = false;
 
     public void showNotification(String message) {
         this.notificationMessage = message;

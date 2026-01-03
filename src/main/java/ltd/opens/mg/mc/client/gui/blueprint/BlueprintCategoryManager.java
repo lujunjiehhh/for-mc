@@ -24,7 +24,7 @@ public class BlueprintCategoryManager {
         List<String> subCategories = new ArrayList<>();
         List<NodeDefinition> directNodes = new ArrayList<>();
         
-        for (NodeDefinition def : NodeRegistry.getAll()) {
+        for (NodeDefinition def : NodeRegistry.getAllDefinitions()) {
             if (def.category().equals(currentPath)) {
                 directNodes.add(def);
             } else if (def.category().startsWith(currentPath + ".")) {
@@ -45,7 +45,7 @@ public class BlueprintCategoryManager {
     }
 
     public static List<NodeDefinition> getNodesInCategory(String categoryPath) {
-        return NodeRegistry.getAll().stream()
+        return NodeRegistry.getAllDefinitions().stream()
                 .filter(def -> def.category().startsWith(categoryPath))
                 .sorted((a, b) -> a.name().compareTo(b.name()))
                 .collect(Collectors.toList());

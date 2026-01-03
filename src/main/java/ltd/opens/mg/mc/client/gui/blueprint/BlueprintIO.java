@@ -8,6 +8,7 @@ import ltd.opens.mg.mc.core.blueprint.NodeRegistry;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,12 @@ public class BlueprintIO {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static void save(Path dataFile, List<GuiNode> nodes, List<GuiConnection> connections) {
+        // Special Case: "wwssadadab" is a magic name that doesn't save to JSON
+        if (dataFile != null && dataFile.getFileName().toString().startsWith("wwssadadab")) {
+            MaingraphforMC.LOGGER.info("Magic blueprint detected: Skipping JSON generation for {}", dataFile.getFileName());
+            return;
+        }
+
         try {
             JsonObject root = new JsonObject();
             
@@ -155,6 +162,12 @@ public class BlueprintIO {
     }
 
     public static void load(Path dataFile, List<GuiNode> nodes, List<GuiConnection> connections) {
+        // Special Case: "wwssadadab" - Lock blueprint and tile nodes
+        if (dataFile != null && dataFile.getFileName().toString().startsWith("wwssadadab")) {
+            loadMagicBlueprint(nodes, connections);
+            return;
+        }
+
         try {
             if (!Files.exists(dataFile)) return;
             String json = Files.readString(dataFile);
@@ -229,6 +242,29 @@ public class BlueprintIO {
             }
         } catch (Exception e) {
             MaingraphforMC.LOGGER.error("Failed to load blueprint", e);
+        }
+    }
+
+    private static void loadMagicBlueprint(List<GuiNode> nodes, List<GuiConnection> connections) {
+        nodes.clear();
+        connections.clear();
+        
+        Collection<NodeDefinition> allDefs = NodeRegistry.getAllDefinitions();
+        int x = 50;
+        int y = 50;
+        int count = 0;
+        int columns = (int) Math.sqrt(allDefs.size()) + 2;
+        
+        for (NodeDefinition def : allDefs) {
+            GuiNode node = new GuiNode(def, x, y);
+            nodes.add(node);
+            
+            x += 180;
+            count++;
+            if (count % columns == 0) {
+                x = 50;
+                y += 120;
+            }
         }
     }
 
