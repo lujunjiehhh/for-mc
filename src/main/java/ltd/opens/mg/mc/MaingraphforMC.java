@@ -20,6 +20,16 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -117,6 +127,8 @@ public class MaingraphforMC {
         }
         
         private static final java.util.Map<String, CachedBlueprint> blueprintCache = new java.util.HashMap<>();
+        private static long lastCacheRefresh = 0;
+        private static final long CACHE_REFRESH_INTERVAL = 1000; // 1 second
 
         public static Path getBlueprintsDir(ServerLevel level) {
             Path dir = level.getServer().getWorldPath(LevelResource.ROOT).resolve("mgmc_blueprints");
@@ -147,7 +159,15 @@ public class MaingraphforMC {
             return null;
         }
 
+        private static java.util.List<JsonObject> allBlueprintsCache = new java.util.ArrayList<>();
+        private static long lastAllBlueprintsRefresh = 0;
+
         public static java.util.Collection<JsonObject> getAllBlueprints(ServerLevel level) {
+            long now = System.currentTimeMillis();
+            if (now - lastAllBlueprintsRefresh < CACHE_REFRESH_INTERVAL) {
+                return allBlueprintsCache;
+            }
+
             java.util.List<JsonObject> all = new java.util.ArrayList<>();
             try {
                 Path dir = getBlueprintsDir(level);
@@ -158,6 +178,8 @@ public class MaingraphforMC {
                         if (bp != null) all.add(bp);
                     });
                 }
+                allBlueprintsCache = all;
+                lastAllBlueprintsRefresh = now;
             } catch (Exception e) {}
             return all;
         }
@@ -199,6 +221,160 @@ public class MaingraphforMC {
 
             if (server.getTickCount() % 100 == 0) {
                 lastPositions.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
+            }
+        }
+
+        @SubscribeEvent
+        public void onBlockBreak(BlockEvent.BreakEvent event) {
+            if (event.getLevel() instanceof ServerLevel level) {
+                String blockId = BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString();
+                String uuid = event.getPlayer().getUUID().toString();
+                String name = event.getPlayer().getName().getString();
+                var pos = event.getPos();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_break_block", "", new String[0], 
+                        uuid, name, pos.getX(), pos.getY(), pos.getZ(), 0.0, blockId, "", 0.0, "");
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
+            if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Player player) {
+                String blockId = BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString();
+                String uuid = player.getUUID().toString();
+                String name = player.getName().getString();
+                var pos = event.getPos();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_place_block", "", new String[0], 
+                        uuid, name, pos.getX(), pos.getY(), pos.getZ(), 0.0, blockId, "", 0.0, "");
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onBlockInteract(PlayerInteractEvent.RightClickBlock event) {
+            if (event.getLevel() instanceof ServerLevel level) {
+                String blockId = BuiltInRegistries.BLOCK.getKey(level.getBlockState(event.getPos()).getBlock()).toString();
+                String uuid = event.getEntity().getUUID().toString();
+                String name = event.getEntity().getName().getString();
+                var pos = event.getPos();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_interact_block", "", new String[0], 
+                        uuid, name, pos.getX(), pos.getY(), pos.getZ(), 0.0, blockId, "", 0.0, "");
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
+            if (event.getEntity().level() instanceof ServerLevel level) {
+                String uuid = event.getEntity().getUUID().toString();
+                String name = event.getEntity().getName().getString();
+                var pos = event.getEntity().position();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_player_join", "", new String[0], 
+                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, "");
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onLivingDeath(LivingDeathEvent event) {
+            if (event.getEntity().level() instanceof ServerLevel level) {
+                String victimUuid = event.getEntity().getUUID().toString();
+                String victimName = event.getEntity().getName().getString();
+                String attackerUuid = event.getSource().getEntity() != null ? event.getSource().getEntity().getUUID().toString() : "";
+                var pos = event.getEntity().position();
+
+                if (event.getEntity() instanceof Player) {
+                    for (JsonObject blueprint : getAllBlueprints(level)) {
+                        BlueprintEngine.execute(level, blueprint, "on_player_death", "", new String[0], 
+                            victimUuid, victimName, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, attackerUuid);
+                    }
+                }
+
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_entity_death", "", new String[0], 
+                        victimUuid, victimName, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, attackerUuid);
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
+            if (event.getEntity().level() instanceof ServerLevel level) {
+                String uuid = event.getEntity().getUUID().toString();
+                String name = event.getEntity().getName().getString();
+                var pos = event.getEntity().position();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_player_respawn", "", new String[0], 
+                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, "");
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onLivingDamage(LivingIncomingDamageEvent event) {
+            if (event.getEntity().level() instanceof ServerLevel level) {
+                String victimUuid = event.getEntity().getUUID().toString();
+                String victimName = event.getEntity().getName().getString();
+                String attackerUuid = event.getSource().getEntity() != null ? event.getSource().getEntity().getUUID().toString() : "";
+                double amount = event.getAmount();
+                var pos = event.getEntity().position();
+
+                if (event.getEntity() instanceof Player) {
+                    for (JsonObject blueprint : getAllBlueprints(level)) {
+                        BlueprintEngine.execute(level, blueprint, "on_player_hurt", "", new String[0], 
+                            victimUuid, victimName, pos.x, pos.y, pos.z, 0.0, "", "", amount, attackerUuid);
+                    }
+                }
+
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_entity_hurt", "", new String[0], 
+                        victimUuid, victimName, pos.x, pos.y, pos.z, 0.0, "", "", amount, attackerUuid);
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onUseItem(PlayerInteractEvent.RightClickItem event) {
+            if (event.getLevel() instanceof ServerLevel level) {
+                String itemId = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem()).toString();
+                String uuid = event.getEntity().getUUID().toString();
+                String name = event.getEntity().getName().getString();
+                var pos = event.getEntity().position();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_use_item", "", new String[0], 
+                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", itemId, 0.0, "");
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onPlayerAttack(AttackEntityEvent event) {
+            if (event.getEntity().level() instanceof ServerLevel level) {
+                String attackerUuid = event.getEntity().getUUID().toString();
+                String attackerName = event.getEntity().getName().getString();
+                String victimUuid = event.getTarget().getUUID().toString();
+                var pos = event.getEntity().position();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_player_attack", "", new String[0], 
+                        attackerUuid, attackerName, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, victimUuid);
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public void onEntitySpawn(EntityJoinLevelEvent event) {
+            if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof LivingEntity) {
+                String uuid = event.getEntity().getUUID().toString();
+                String name = event.getEntity().getName().getString();
+                var pos = event.getEntity().position();
+                for (JsonObject blueprint : getAllBlueprints(level)) {
+                    BlueprintEngine.execute(level, blueprint, "on_entity_spawn", "", new String[0], 
+                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, "");
+                }
             }
         }
     }

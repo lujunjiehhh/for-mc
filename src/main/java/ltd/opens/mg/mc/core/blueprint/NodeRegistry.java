@@ -56,6 +56,122 @@ public class NodeRegistry {
             .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
             .build());
 
+        register(new NodeDefinition.Builder("on_break_block", "node.mgmc.on_break_block.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("block_id", "node.mgmc.port.block_id", NodeDefinition.PortType.STRING, colorString)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_place_block", "node.mgmc.on_place_block.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("block_id", "node.mgmc.port.block_id", NodeDefinition.PortType.STRING, colorString)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_interact_block", "node.mgmc.on_interact_block.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("block_id", "node.mgmc.port.block_id", NodeDefinition.PortType.STRING, colorString)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_player_join", "node.mgmc.on_player_join.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .addOutput("trigger_name", "node.mgmc.port.name", NodeDefinition.PortType.STRING, colorString)
+            .build());
+
+        register(new NodeDefinition.Builder("on_player_death", "node.mgmc.on_player_death.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_player_respawn", "node.mgmc.on_player_respawn.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_player_hurt", "node.mgmc.on_player_hurt.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("damage_amount", "node.mgmc.port.damage_amount", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("attacker_uuid", "node.mgmc.port.attacker_uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_use_item", "node.mgmc.on_use_item.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("item_id", "node.mgmc.port.item_id", NodeDefinition.PortType.STRING, colorString)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_player_attack", "node.mgmc.on_player_attack.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("victim_uuid", "node.mgmc.port.victim_uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_entity_death", "node.mgmc.on_entity_death.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("victim_uuid", "node.mgmc.port.victim_uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .addOutput("attacker_uuid", "node.mgmc.port.attacker_uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_entity_hurt", "node.mgmc.on_entity_hurt.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("damage_amount", "node.mgmc.port.damage_amount", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("victim_uuid", "node.mgmc.port.victim_uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .addOutput("attacker_uuid", "node.mgmc.port.attacker_uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
+        register(new NodeDefinition.Builder("on_entity_spawn", "node.mgmc.on_entity_spawn.name")
+            .category("node_category.mgmc.events")
+            .color(0xFF0088FF)
+            .addOutput("exec", "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, colorExec)
+            .addOutput("x", "node.mgmc.port.x", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("y", "node.mgmc.port.y", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("z", "node.mgmc.port.z", NodeDefinition.PortType.FLOAT, colorFloat)
+            .addOutput("uuid", "node.mgmc.port.uuid", NodeDefinition.PortType.UUID, colorUUID)
+            .build());
+
         // Action -> Player
         register(new NodeDefinition.Builder("print_chat", "node.mgmc.print_chat.name")
             .category("node_category.mgmc.action.player")

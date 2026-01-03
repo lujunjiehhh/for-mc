@@ -15,13 +15,19 @@ public class NodeContext {
     public final double triggerY;
     public final double triggerZ;
     public final double triggerSpeed;
+    public final String triggerBlockId;
+    public final String triggerItemId;
+    public final double triggerValue;
+    public final String triggerExtraUuid;
     public final Map<String, JsonObject> nodesMap;
     public final Map<String, String> variables = new HashMap<>();
     public boolean breakRequested = false;
     public String lastTriggeredPin;
 
     public NodeContext(Level level, String eventName, String[] args, String triggerUuid, String triggerName, 
-                       double triggerX, double triggerY, double triggerZ, double triggerSpeed, Map<String, JsonObject> nodesMap) {
+                       double triggerX, double triggerY, double triggerZ, double triggerSpeed,
+                       String triggerBlockId, String triggerItemId, double triggerValue, String triggerExtraUuid,
+                       Map<String, JsonObject> nodesMap) {
         this.level = level;
         this.eventName = eventName;
         this.args = args;
@@ -31,6 +37,10 @@ public class NodeContext {
         this.triggerY = triggerY;
         this.triggerZ = triggerZ;
         this.triggerSpeed = triggerSpeed;
+        this.triggerBlockId = triggerBlockId;
+        this.triggerItemId = triggerItemId;
+        this.triggerValue = triggerValue;
+        this.triggerExtraUuid = triggerExtraUuid;
         this.nodesMap = nodesMap;
     }
 }
