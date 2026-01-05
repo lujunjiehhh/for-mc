@@ -20,13 +20,7 @@ import java.util.*;
 public class BlueprintIO {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    public static void save(Path dataFile, List<GuiNode> nodes, List<GuiConnection> connections) {
-        // Special Case: "wwssadadab" is a magic name that doesn't save to JSON
-        if (dataFile != null && dataFile.getFileName().toString().startsWith("wwssadadab")) {
-            MaingraphforMC.LOGGER.info("Magic blueprint detected: Skipping JSON generation for {}", dataFile.getFileName());
-            return;
-        }
-
+    public static String serialize(List<GuiNode> nodes, List<GuiConnection> connections) {
         try {
             JsonObject root = new JsonObject();
             
@@ -148,9 +142,26 @@ public class BlueprintIO {
             ui.add("connections", connArray);
             root.add("ui", ui);
 
-            String json = GSON.toJson(root);
-            Files.writeString(dataFile, json);
-            MaingraphforMC.LOGGER.info("Saved blueprint to {}", dataFile.toAbsolutePath());
+            return GSON.toJson(root);
+        } catch (Exception e) {
+            MaingraphforMC.LOGGER.error("Failed to serialize blueprint", e);
+            return null;
+        }
+    }
+
+    public static void save(Path dataFile, List<GuiNode> nodes, List<GuiConnection> connections) {
+        // Special Case: "wwssadadab" is a magic name that doesn't save to JSON
+        if (dataFile != null && dataFile.getFileName().toString().startsWith("wwssadadab")) {
+            MaingraphforMC.LOGGER.info("Magic blueprint detected: Skipping JSON generation for {}", dataFile.getFileName());
+            return;
+        }
+
+        try {
+            String json = serialize(nodes, connections);
+            if (json != null) {
+                Files.writeString(dataFile, json);
+                MaingraphforMC.LOGGER.info("Saved blueprint to {}", dataFile.toAbsolutePath());
+            }
         } catch (Exception e) {
             MaingraphforMC.LOGGER.error("Failed to save blueprint", e);
         }
@@ -175,6 +186,14 @@ public class BlueprintIO {
         try {
             if (!Files.exists(dataFile)) return;
             String json = Files.readString(dataFile);
+            loadFromString(json, nodes, connections);
+        } catch (Exception e) {
+            MaingraphforMC.LOGGER.error("Failed to load blueprint", e);
+        }
+    }
+
+    public static void loadFromString(String json, List<GuiNode> nodes, List<GuiConnection> connections) {
+        try {
             if (json == null || json.isEmpty()) return;
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
             
@@ -245,7 +264,7 @@ public class BlueprintIO {
                 }
             }
         } catch (Exception e) {
-            MaingraphforMC.LOGGER.error("Failed to load blueprint", e);
+            MaingraphforMC.LOGGER.error("Failed to load blueprint from string", e);
         }
     }
 
