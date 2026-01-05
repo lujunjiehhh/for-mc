@@ -38,6 +38,7 @@ public class BlueprintState {
     public String notificationMessage = null;
     public int notificationTimer = 0;
     public boolean readOnly = false;
+    public long version = 0;
 
     public void showNotification(String message) {
         this.notificationMessage = message;

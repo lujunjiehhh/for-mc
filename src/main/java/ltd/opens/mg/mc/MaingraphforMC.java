@@ -45,6 +45,7 @@ public class MaingraphforMC {
 
     public MaingraphforMC(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(ltd.opens.mg.mc.network.MGMCNetwork::register);
 
         NeoForge.EVENT_BUS.register(this);
         NeoForge.EVENT_BUS.register(new BlueprintServerHandler());
@@ -120,9 +121,11 @@ public class MaingraphforMC {
         private static class CachedBlueprint {
             JsonObject json;
             long lastModified;
-            CachedBlueprint(JsonObject json, long lastModified) {
+            long version;
+            CachedBlueprint(JsonObject json, long lastModified, long version) {
                 this.json = json;
                 this.lastModified = lastModified;
+                this.version = version;
             }
         }
         
@@ -150,13 +153,75 @@ public class MaingraphforMC {
                     if (cached == null || lastModified > cached.lastModified) {
                         String json = Files.readString(dataFile);
                         JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-                        cached = new CachedBlueprint(obj, lastModified);
+                        long version = obj.has("_version") ? obj.get("_version").getAsLong() : 0;
+                        cached = new CachedBlueprint(obj, lastModified, version);
                         blueprintCache.put(name, cached);
                     }
                     return cached.json;
                 }
             } catch (Exception e) {}
             return null;
+        }
+
+        public static long getBlueprintVersion(ServerLevel level, String name) {
+            if (!name.endsWith(".json")) name += ".json";
+            getBlueprint(level, name); // Ensure it's in cache
+            CachedBlueprint cached = blueprintCache.get(name);
+            return cached != null ? cached.version : -1;
+        }
+
+        public static SaveResult saveBlueprint(ServerLevel level, String name, String data, long expectedVersion) {
+            try {
+                if (!name.endsWith(".json")) name += ".json";
+                Path dataFile = getBlueprintsDir(level).resolve(name);
+                
+                long currentVersion = getBlueprintVersion(level, name);
+                
+                // Race condition check: if file exists and version doesn't match
+                if (currentVersion != -1 && expectedVersion != -1 && currentVersion != expectedVersion) {
+                    return new SaveResult(false, "Race condition detected: blueprint has been modified by another user.", currentVersion);
+                }
+
+                JsonObject obj = JsonParser.parseString(data).getAsJsonObject();
+                long newVersion = (currentVersion == -1 ? 0 : currentVersion) + 1;
+                obj.addProperty("_version", newVersion);
+                
+                Files.writeString(dataFile, obj.toString());
+                
+                // Update cache
+                blueprintCache.put(name, new CachedBlueprint(obj, System.currentTimeMillis(), newVersion));
+                lastAllBlueprintsRefresh = 0; // Force refresh of all blueprints list
+                
+                return new SaveResult(true, "Saved successfully.", newVersion);
+            } catch (Exception e) {
+                return new SaveResult(false, "Failed to save: " + e.getMessage(), -1);
+            }
+        }
+
+        public record SaveResult(boolean success, String message, long newVersion) {}
+
+        public static void deleteBlueprint(ServerLevel level, String name) {
+            try {
+                if (!name.endsWith(".json")) name += ".json";
+                Path dataFile = getBlueprintsDir(level).resolve(name);
+                Files.deleteIfExists(dataFile);
+                blueprintCache.remove(name);
+                lastAllBlueprintsRefresh = 0;
+            } catch (Exception e) {}
+        }
+
+        public static void renameBlueprint(ServerLevel level, String oldName, String newName) {
+            try {
+                if (!oldName.endsWith(".json")) oldName += ".json";
+                if (!newName.endsWith(".json")) newName += ".json";
+                Path oldFile = getBlueprintsDir(level).resolve(oldName);
+                Path newFile = getBlueprintsDir(level).resolve(newName);
+                if (Files.exists(oldFile)) {
+                    Files.move(oldFile, newFile);
+                    blueprintCache.remove(oldName);
+                    lastAllBlueprintsRefresh = 0;
+                }
+            } catch (Exception e) {}
         }
 
         private static java.util.List<JsonObject> allBlueprintsCache = new java.util.ArrayList<>();

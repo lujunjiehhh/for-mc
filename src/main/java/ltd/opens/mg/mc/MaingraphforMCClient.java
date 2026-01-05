@@ -74,11 +74,10 @@ public class MaingraphforMCClient {
         Minecraft mc = Minecraft.getInstance();
         Path baseDir;
         if (mc.getSingleplayerServer() != null) {
+            // Singleplayer: Store in world-specific folder
             baseDir = mc.getSingleplayerServer().getWorldPath(LevelResource.ROOT).resolve("mgmc_blueprints");
-        } else if (mc.getCurrentServer() != null) {
-            String serverName = mc.getCurrentServer().ip.replaceAll("[^a-zA-Z0-9.-]", "_");
-            baseDir = mc.gameDirectory.toPath().resolve("mgmc_blueprints").resolve(serverName);
         } else {
+            // Main menu or fallback: Store in global local folder
             baseDir = mc.gameDirectory.toPath().resolve("mgmc_blueprints").resolve("local");
         }
 

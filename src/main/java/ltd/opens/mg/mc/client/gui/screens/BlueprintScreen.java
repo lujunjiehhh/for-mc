@@ -15,24 +15,61 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
+import ltd.opens.mg.mc.network.payloads.*;
 import java.nio.file.Path;
 
 public class BlueprintScreen extends Screen {
     private final Path dataFile;
+    private final String blueprintName;
     private final BlueprintState state = new BlueprintState();
     private final BlueprintEventHandler eventHandler;
 
     public BlueprintScreen(Path dataFile) {
         super(Component.translatable("gui.mgmc.blueprint_editor.title", dataFile.getFileName().toString()));
         this.dataFile = dataFile;
+        this.blueprintName = dataFile.getFileName().toString();
         this.eventHandler = new BlueprintEventHandler(state);
         
         // Special Case: "wwssadadab" - Lock blueprint
-        if (dataFile.getFileName().toString().startsWith("wwssadadab")) {
+        if (blueprintName.startsWith("wwssadadab")) {
             state.readOnly = true;
         }
 
         BlueprintIO.load(this.dataFile, state.nodes, state.connections);
+    }
+
+    public BlueprintScreen(String name) {
+        super(Component.translatable("gui.mgmc.blueprint_editor.title", name));
+        this.dataFile = null;
+        this.blueprintName = name.endsWith(".json") ? name : name + ".json";
+        this.eventHandler = new BlueprintEventHandler(state);
+
+        if (blueprintName.startsWith("wwssadadab")) {
+            state.readOnly = true;
+        }
+
+        // Request data from server
+        if (blueprintName != null && !blueprintName.isEmpty()) {
+            if (Minecraft.getInstance().getConnection() != null) Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RequestBlueprintDataPayload(blueprintName)));
+        }
+    }
+
+    public void loadFromNetwork(String json, long version) {
+        state.nodes.clear();
+        state.connections.clear();
+        BlueprintIO.loadFromString(json, state.nodes, state.connections);
+        state.version = version;
+    }
+
+    public void onSaveResult(boolean success, String message, long newVersion) {
+        if (success) {
+            state.version = newVersion;
+            state.isDirty = false;
+            state.showNotification(Component.translatable("gui.mgmc.blueprint_editor.save_success").getString());
+        } else {
+            state.showNotification(message);
+        }
     }
 
     @Override
@@ -155,6 +192,12 @@ public class BlueprintScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
+    private boolean isRemoteServer() {
+        return Minecraft.getInstance().getSingleplayerServer() == null && 
+               Minecraft.getInstance().level != null && 
+               Minecraft.getInstance().level.isClientSide();
+    }
+
     @Override
     public void onClose() {
         if (state.isDirty) {
@@ -170,7 +213,15 @@ public class BlueprintScreen extends Screen {
                 InputModalScreen.Mode.SELECTION,
                 (selected) -> {
                     if (selected.equals(Component.translatable("gui.mgmc.blueprint_editor.save_confirm.save").getString())) {
-                        BlueprintIO.save(this.dataFile, state.nodes, state.connections);
+                        String json = BlueprintIO.serialize(state.nodes, state.connections);
+                                               
+                        if (isRemoteServer()) {
+                            if (Minecraft.getInstance().getConnection() != null) {
+                                Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new SaveBlueprintPayload(blueprintName, json, state.version)));
+                            }
+                        } else if (this.dataFile != null) {
+                            BlueprintIO.save(this.dataFile, state.nodes, state.connections);
+                        }
                     }
                     state.isDirty = false;
                     Minecraft.getInstance().setScreen(new BlueprintSelectionScreen());
@@ -192,7 +243,14 @@ public class BlueprintScreen extends Screen {
         Component text = Component.translatable(langKey);
         int textW = font.width(text);
         guiGraphics.drawString(font, text, x + (w - textW) / 2, y + (h - 9) / 2, hovered ? 0xFFFFFFFF : 0xFFBBBBBB, false);
+
+        if (hovered && Minecraft.getInstance().mouseHandler.isLeftPressed()) {
+            // This is still inside render, which is called every frame.
+            // We should use a flag to prevent multiple sends or move this to mouseClicked.
+        }
     }
+
+
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
@@ -240,9 +298,19 @@ public class BlueprintScreen extends Screen {
             // Save
             rightX -= 55;
             if (!state.readOnly && isHovering((int)mouseX, (int)mouseY, rightX, 3, 50, 20)) {
-                BlueprintIO.save(this.dataFile, state.nodes, state.connections);
-                state.isDirty = false;
-                state.showNotification(Component.translatable("gui.mgmc.blueprint_editor.saved").getString());
+                String json = BlueprintIO.serialize(state.nodes, state.connections);
+                if (json != null) {
+                    if (isRemoteServer()) {
+                        if (Minecraft.getInstance().getConnection() != null) {
+                            Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new SaveBlueprintPayload(blueprintName, json, state.version)));
+                        }
+                    } else if (this.dataFile != null) {
+                        // 只有在单机环境下且有本地文件路径时，才写本地文件
+                        BlueprintIO.save(this.dataFile, state.nodes, state.connections);
+                        state.isDirty = false;
+                        state.showNotification(Component.translatable("gui.mgmc.blueprint_editor.saved").getString());
+                    }
+                }
                 return true;
             }
             

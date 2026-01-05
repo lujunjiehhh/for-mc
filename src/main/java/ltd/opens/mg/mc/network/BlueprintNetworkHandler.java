@@ -1,0 +1,121 @@
+package ltd.opens.mg.mc.network;
+
+import com.google.gson.JsonObject;
+import ltd.opens.mg.mc.MaingraphforMC;
+import ltd.opens.mg.mc.client.gui.screens.BlueprintScreen;
+import ltd.opens.mg.mc.client.gui.screens.BlueprintSelectionScreen;
+import ltd.opens.mg.mc.network.payloads.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+
+import java.util.stream.Collectors;
+
+public class BlueprintNetworkHandler {
+
+    public static class Server {
+        public static void handleRequestList(final RequestBlueprintListPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player) {
+                    var blueprints = MaingraphforMC.BlueprintServerHandler.getAllBlueprints((ServerLevel) player.level());
+                    java.util.List<String> names = blueprints.stream()
+                            .map(bp -> bp.has("name") ? bp.get("name").getAsString() : "unknown")
+                            .collect(Collectors.toList());
+                    
+                    // Fallback to filenames if name property is missing
+                    if (names.isEmpty() || names.contains("unknown")) {
+                        try (var stream = java.nio.file.Files.list(MaingraphforMC.BlueprintServerHandler.getBlueprintsDir((ServerLevel) player.level()))) {
+                            names = stream.filter(p -> p.toString().endsWith(".json"))
+                                    .map(p -> p.getFileName().toString())
+                                    .collect(Collectors.toList());
+                        } catch (Exception e) {}
+                    }
+                    
+                    context.reply(new ResponseBlueprintListPayload(names));
+                }
+            });
+        }
+
+        public static void handleRequestData(final RequestBlueprintDataPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player) {
+                    JsonObject bp = MaingraphforMC.BlueprintServerHandler.getBlueprint((ServerLevel) player.level(), payload.name());
+                    if (bp != null) {
+                        long version = MaingraphforMC.BlueprintServerHandler.getBlueprintVersion((ServerLevel) player.level(), payload.name());
+                        context.reply(new ResponseBlueprintDataPayload(payload.name(), bp.toString(), version));
+                    }
+                }
+            });
+        }
+
+        public static void handleSave(final SaveBlueprintPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player) {
+                    MaingraphforMC.BlueprintServerHandler.SaveResult result = MaingraphforMC.BlueprintServerHandler.saveBlueprint(
+                            (ServerLevel) player.level(),
+                            payload.name(),
+                            payload.data(),
+                            payload.expectedVersion()
+                    );
+                    context.reply(new SaveResultPayload(result.success(), result.message(), result.newVersion()));
+                }
+            });
+        }
+
+        public static void handleDelete(final DeleteBlueprintPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player) {
+                    MaingraphforMC.BlueprintServerHandler.deleteBlueprint((ServerLevel) player.level(), payload.name());
+                    // Refresh list for all clients or just the sender?
+                    // For simplicity, the client can request a refresh or we can broadcast.
+                    // Usually, the client that deleted it will refresh its list.
+                    var blueprints = MaingraphforMC.BlueprintServerHandler.getAllBlueprints((ServerLevel) player.level());
+                    java.util.List<String> names = blueprints.stream()
+                            .map(bp -> bp.has("name") ? bp.get("name").getAsString() : "unknown")
+                            .collect(Collectors.toList());
+                    context.reply(new ResponseBlueprintListPayload(names));
+                }
+            });
+        }
+
+        public static void handleRename(final RenameBlueprintPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player) {
+                    MaingraphforMC.BlueprintServerHandler.renameBlueprint((ServerLevel) player.level(), payload.oldName(), payload.newName());
+                    var blueprints = MaingraphforMC.BlueprintServerHandler.getAllBlueprints((ServerLevel) player.level());
+                    java.util.List<String> names = blueprints.stream()
+                            .map(bp -> bp.has("name") ? bp.get("name").getAsString() : "unknown")
+                            .collect(Collectors.toList());
+                    context.reply(new ResponseBlueprintListPayload(names));
+                }
+            });
+        }
+    }
+
+    public static class Client {
+        public static void handleResponseList(final ResponseBlueprintListPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (Minecraft.getInstance().screen instanceof BlueprintSelectionScreen selectionScreen) {
+                    selectionScreen.updateListFromServer(payload.blueprints());
+                }
+            });
+        }
+
+        public static void handleResponseData(final ResponseBlueprintDataPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (Minecraft.getInstance().screen instanceof BlueprintScreen screen) {
+                    screen.loadFromNetwork(payload.data(), payload.version());
+                }
+            });
+        }
+
+        public static void handleSaveResult(final SaveResultPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (Minecraft.getInstance().screen instanceof BlueprintScreen screen) {
+                    screen.onSaveResult(payload.success(), payload.message(), payload.newVersion());
+                }
+            });
+        }
+    }
+}
