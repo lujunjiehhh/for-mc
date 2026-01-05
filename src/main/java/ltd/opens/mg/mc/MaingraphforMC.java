@@ -117,6 +117,11 @@ public class MaingraphforMC {
 
     public static class BlueprintServerHandler {
         private final java.util.Map<java.util.UUID, Double[]> lastPositions = new java.util.HashMap<>();
+        private static final java.util.concurrent.ExecutorService IO_EXECUTOR = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "MGMC-IO-Thread");
+            t.setDaemon(true);
+            return t;
+        });
         
         private static class CachedBlueprint {
             JsonObject json;
@@ -133,6 +138,12 @@ public class MaingraphforMC {
         private static long lastCacheRefresh = 0;
         private static final long CACHE_REFRESH_INTERVAL = 1000; // 1 second
 
+        private static boolean isValidFileName(String name) {
+            if (name == null || name.isEmpty()) return false;
+            // 严禁路径穿越和非法字符
+            return !name.contains("..") && !name.contains("/") && !name.contains("\\") && name.matches("^[a-zA-Z0-9_\\-\\.]+$");
+        }
+
         public static Path getBlueprintsDir(ServerLevel level) {
             Path dir = level.getServer().getWorldPath(LevelResource.ROOT).resolve("mgmc_blueprints");
             if (!Files.exists(dir)) {
@@ -144,6 +155,7 @@ public class MaingraphforMC {
         }
 
         public static JsonObject getBlueprint(ServerLevel level, String name) {
+            if (!isValidFileName(name)) return null;
             try {
                 if (!name.endsWith(".json")) name += ".json";
                 Path dataFile = getBlueprintsDir(level).resolve(name);
@@ -167,43 +179,59 @@ public class MaingraphforMC {
         }
 
         public static long getBlueprintVersion(ServerLevel level, String name) {
+            if (!isValidFileName(name)) return -1;
             if (!name.endsWith(".json")) name += ".json";
             getBlueprint(level, name); // Ensure it's in cache
             CachedBlueprint cached = blueprintCache.get(name);
             return cached != null ? cached.version : -1;
         }
 
+        public static java.util.concurrent.CompletableFuture<SaveResult> saveBlueprintAsync(ServerLevel level, String name, String data, long expectedVersion) {
+            if (!isValidFileName(name)) {
+                return java.util.concurrent.CompletableFuture.completedFuture(new SaveResult(false, "Invalid file name.", -1));
+            }
+            
+            return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    String fileName = name.endsWith(".json") ? name : name + ".json";
+                    Path dataFile = getBlueprintsDir(level).resolve(fileName);
+                    
+                    long currentVersion = getBlueprintVersion(level, name);
+                    
+                    // Race condition check
+                    if (currentVersion != -1 && expectedVersion != -1 && currentVersion != expectedVersion) {
+                        return new SaveResult(false, "Race condition detected: blueprint has been modified by another user.", currentVersion);
+                    }
+
+                    JsonObject obj = JsonParser.parseString(data).getAsJsonObject();
+                    long newVersion = (currentVersion == -1 ? 0 : currentVersion) + 1;
+                    obj.addProperty("_version", newVersion);
+                    
+                    Files.writeString(dataFile, obj.toString());
+                    
+                    // Update cache
+                    blueprintCache.put(fileName, new CachedBlueprint(obj, System.currentTimeMillis(), newVersion));
+                    lastAllBlueprintsRefresh = 0; 
+                    
+                    return new SaveResult(true, "Saved successfully.", newVersion);
+                } catch (Exception e) {
+                    return new SaveResult(false, "Save failed: " + e.getMessage(), -1);
+                }
+            }, IO_EXECUTOR);
+        }
+
         public static SaveResult saveBlueprint(ServerLevel level, String name, String data, long expectedVersion) {
             try {
-                if (!name.endsWith(".json")) name += ".json";
-                Path dataFile = getBlueprintsDir(level).resolve(name);
-                
-                long currentVersion = getBlueprintVersion(level, name);
-                
-                // Race condition check: if file exists and version doesn't match
-                if (currentVersion != -1 && expectedVersion != -1 && currentVersion != expectedVersion) {
-                    return new SaveResult(false, "Race condition detected: blueprint has been modified by another user.", currentVersion);
-                }
-
-                JsonObject obj = JsonParser.parseString(data).getAsJsonObject();
-                long newVersion = (currentVersion == -1 ? 0 : currentVersion) + 1;
-                obj.addProperty("_version", newVersion);
-                
-                Files.writeString(dataFile, obj.toString());
-                
-                // Update cache
-                blueprintCache.put(name, new CachedBlueprint(obj, System.currentTimeMillis(), newVersion));
-                lastAllBlueprintsRefresh = 0; // Force refresh of all blueprints list
-                
-                return new SaveResult(true, "Saved successfully.", newVersion);
+                return saveBlueprintAsync(level, name, data, expectedVersion).get(5, java.util.concurrent.TimeUnit.SECONDS);
             } catch (Exception e) {
-                return new SaveResult(false, "Failed to save: " + e.getMessage(), -1);
+                return new SaveResult(false, "Save timeout or error: " + e.getMessage(), -1);
             }
         }
 
         public record SaveResult(boolean success, String message, long newVersion) {}
 
         public static void deleteBlueprint(ServerLevel level, String name) {
+            if (!isValidFileName(name)) return;
             try {
                 if (!name.endsWith(".json")) name += ".json";
                 Path dataFile = getBlueprintsDir(level).resolve(name);
@@ -214,6 +242,7 @@ public class MaingraphforMC {
         }
 
         public static void renameBlueprint(ServerLevel level, String oldName, String newName) {
+            if (!isValidFileName(oldName) || !isValidFileName(newName)) return;
             try {
                 if (!oldName.endsWith(".json")) oldName += ".json";
                 if (!newName.endsWith(".json")) newName += ".json";

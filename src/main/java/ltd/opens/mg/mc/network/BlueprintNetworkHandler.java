@@ -62,21 +62,20 @@ public class BlueprintNetworkHandler {
         }
 
         public static void handleSave(final SaveBlueprintPayload payload, final IPayloadContext context) {
-            context.enqueueWork(() -> {
-                if (context.player() instanceof ServerPlayer player) {
-                    if (!hasPermission(player)) {
-                        context.reply(new SaveResultPayload(false, "You do not have permission to save blueprints.", 0));
-                        return;
-                    }
-                    MaingraphforMC.BlueprintServerHandler.SaveResult result = MaingraphforMC.BlueprintServerHandler.saveBlueprint(
-                            (ServerLevel) player.level(),
-                            payload.name(),
-                            payload.data(),
-                            payload.expectedVersion()
-                    );
-                    context.reply(new SaveResultPayload(result.success(), result.message(), result.newVersion()));
+            if (context.player() instanceof ServerPlayer player) {
+                if (!hasPermission(player)) {
+                    context.reply(new SaveResultPayload(false, "You do not have permission to save blueprints.", 0));
+                    return;
                 }
-            });
+                MaingraphforMC.BlueprintServerHandler.saveBlueprintAsync(
+                        (ServerLevel) player.level(),
+                        payload.name(),
+                        payload.data(),
+                        payload.expectedVersion()
+                ).thenAccept(result -> {
+                    context.reply(new SaveResultPayload(result.success(), result.message(), result.newVersion()));
+                });
+            }
         }
 
         public static void handleDelete(final DeleteBlueprintPayload payload, final IPayloadContext context) {
