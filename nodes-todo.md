@@ -88,14 +88,14 @@
 - [x] `string_split` (分割)
 
 ### 2.8 列表操作节点 (List Nodes) -> `ListNodes.java`
-- [ ] `get_list_item` (获取元素)
-- [ ] `list_add` (添加元素)
-- [ ] `list_remove` (移除元素)
-- [ ] `list_length` (列表长度)
-- [ ] `list_contains` (包含元素)
-- [ ] `list_set_item` (设置元素)
-- [ ] `list_join` (合并/转字符串)
-- [ ] `random_list_item` (随机元素)
+- [x] `get_list_item` (获取元素)
+  - [x] `list_add` (添加元素)
+  - [x] `list_remove` (移除元素)
+  - [x] `list_length` (列表长度)
+  - [x] `list_contains` (包含元素)
+  - [x] `list_set_item` (设置元素)
+  - [x] `list_join` (合并/转字符串)
+  - [x] `random_list_item` (随机元素)
 
 ### 2.9 类型转换 (Conversion) -> `ConversionNodes.java`
 - [x] `cast` (强制类型转换)

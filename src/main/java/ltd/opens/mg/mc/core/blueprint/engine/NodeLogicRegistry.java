@@ -120,13 +120,6 @@ public class NodeLogicRegistry {
         register("print_chat", new PrintChatHandler());
         register("run_command_as_player", new RunCommandAsPlayerHandler());
         register("print_string", new PrintStringHandler());
-        register("get_list_item", new GetListItemHandler());
-        register("list_add", new ListAddHandler());
-        register("list_remove", new ListRemoveHandler());
-        register("list_length", new ListLengthHandler());
-        register("list_contains", new ListContainsHandler());
-        register("list_set_item", new ListSetItemHandler());
-        register("list_join", new ListJoinHandler());
         register("get_entity_info", new GetEntityInfoHandler());
         register("play_effect", new PlayEffectHandler());
         register("explosion", new ExplosionHandler());
@@ -135,7 +128,6 @@ public class NodeLogicRegistry {
         
         // Data
         register("player_health", new PlayerHealthHandler());
-        register("random_list_item", new RandomListItemHandler());
         
         // Comparison
     }
