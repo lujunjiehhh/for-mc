@@ -288,15 +288,6 @@ public class NodeRegistrar {
             .addInput("exec", "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, colorExec)
             .addOutput("break", "node.mgmc.break_loop.port.break", NodeDefinition.PortType.EXEC, colorExec)
             .build());
-            
-        NodeRegistry.register(new NodeDefinition.Builder("cast", "node.mgmc.cast.name")
-            .category("node_category.mgmc.logic.math")
-            .color(0xFF888888)
-            .addInput("input", "node.mgmc.cast.port.input", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
-            .addInput("to_type", "node.mgmc.cast.port.to_type", NodeDefinition.PortType.STRING, colorString, true, "STRING", 
-                new String[]{"STRING", "FLOAT", "BOOLEAN", "UUID", "INT", "LIST"})
-            .addOutput("output", "node.mgmc.cast.port.output", NodeDefinition.PortType.ANY, 0xFFAAAAAA)
-            .build());
     }
 
     private static void registerStrings() {

@@ -98,7 +98,7 @@
 - [ ] `random_list_item` (随机元素)
 
 ### 2.9 类型转换 (Conversion) -> `ConversionNodes.java`
-- [ ] `cast` (类型转换) -> **需修复硬编码**
+- [x] `cast` (强制类型转换)
 
 ## 3. 清理工作
 - [x] 移除 `NodeRegistrar.java` 中的旧注册逻辑

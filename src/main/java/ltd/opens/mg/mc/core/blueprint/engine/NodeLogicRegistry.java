@@ -141,7 +141,6 @@ public class NodeLogicRegistry {
 
         // Logic
         register("branch", new BranchHandler());
-        register("cast", new CastHandler());
         register("switch", new SwitchHandler());
         register("for_loop", new ForLoopHandler());
         register("break_loop", new BreakLoopHandler());
