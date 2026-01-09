@@ -40,9 +40,11 @@
     - [ ] **操作**：在 `NodeHelper` 中新增 `registerMathOp(BiFunction<Double, Double, Double> op)` 等高阶封装方法。
     - [ ] **细节**：重构 `MathNodes.java`，将原先的冗长逻辑简化为 1-2 行，自动处理类型转换。
 - [ ] **规范化颜色与分类定义**
-    - **原因**：颜色值硬编码在各个类中。如果以后想更换配色风格（如深色模式），必须修改几十个文件。
-    - [ ] **操作**：新建 `NodeThemes` 类，定义 `COLOR_MATH`, `COLOR_CONTROL`, `CATEGORY_LOGIC` 等常量。
-    - [ ] **细节**：统一管理视觉风格，实现“一处修改，全局生效”。
+    - **原因**：颜色值硬编码在各个类中，且极其不统一。不仅端口颜色混乱，**不同分类的节点颜色（如动作类、逻辑类、变量类）也散落在各处**。这导致 UI 风格混乱，且难以进行全局主题调整。
+    - [ ] **操作**：新建 `ltd.opens.mg.mc.core.blueprint.NodeThemes` 类，定义一套标准的调色板（Palette）。
+    - [ ] **操作**：统一分类颜色：定义 `COLOR_NODE_ACTION`, `COLOR_NODE_EVENT`, `COLOR_NODE_LOGIC`, `COLOR_NODE_VARIABLE` 等标准色。
+    - [ ] **操作**：统一端口颜色：定义 `COLOR_PORT_EXEC`, `COLOR_PORT_STRING`, `COLOR_PORT_FLOAT`, `COLOR_PORT_BOOLEAN` 等标准色。
+    - [ ] **细节**：在所有节点类（如 `ActionNodes`, `LogicNodes`）中引用这些常量。实现“一处修改，全局生效”，确保同分类节点和同类型端口的颜色在视觉上高度一致。
 - [ ] **修复执行期状态污染**
     - **原因**：直接在 `JsonObject`（节点实例）上存临时变量（如 `_index`）会导致蓝图文件被修改，且在并发或递归执行时数据会相互干扰。
     - [ ] **操作**：在 `NodeContext.java` 中增加 `Map<String, Object> runtimeData` 或类似作用域。
