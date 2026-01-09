@@ -1,43 +1,63 @@
-# 节点注册系统改进建议 (按逻辑顺序排列)
+# 节点注册系统改进建议 (详细执行计划)
 
 ## 第一阶段：基础设施与规范 (重构基础)
+
 - [ ] **提升线程安全性**
-    - 将 NodeRegistry.java 和 NodeLogicRegistry.java 的底层 HashMap 替换为 ConcurrentHashMap。
-    - **因果关系**：确保在后续引入多线程初始化或事件驱动注册时，底层存储不会崩溃。
+    - **原因**：当前的 `HashMap` 在多线程环境下（如 NeoForge 并行加载或异步脚本解析）会导致死循环或数据丢失。
+    - [ ] **操作**：将 `NodeRegistry.java` 和 `NodeLogicRegistry.java` 的底层 `HashMap` 替换为 `ConcurrentHashMap`。
+    - [ ] **细节**：确保在并发初始化时，`register` 和 `get` 操作是线程安全的。
 - [ ] **引入命名空间机制**
-    - 自动为 node ID 添加 modid: 前缀（例如 mgmc:on_mgrun）。
-    - **因果关系**：确立 ID 契约。在开放外部 API 之前必须解决，否则后期更改 ID 格式会导致蓝图存档不兼容。
+    - **原因**：没有命名空间的 ID（如 `add_float`）极易与第三方插件冲突。确立 `modid:id` 契约是开放 API 的前提。
+    - [ ] **操作**：在 `NodeHelper.setup(id, ...)` 中增加逻辑，若 `id` 不包含 `:`，则自动补全为 `mgmc:id`。
+    - [ ] **操作**：在 `NodeRegistry.register` 中增加校验，强制要求所有注册的 ID 必须包含命名空间。
+    - [ ] **细节**：防止不同模组间的节点 ID 冲突，确立全局唯一的节点契约。
 - [ ] **增加重复注册校验**
-    - 在 NodeRegistry.java 注册时检查 ID 是否已存在。
-    - **因果关系**：防止不同模组（或同一模组不同位置）无意中覆盖已有的节点定义，增加系统稳定性。
+    - **原因**：静默覆盖已注册节点会导致极难排查的 Bug。显式报错能让开发者在第一时间发现 ID 冲突。
+    - [ ] **操作**：在 `NodeRegistry.register` 方法头部增加 `if (REGISTRY.containsKey(id)) throw new IllegalStateException(...)`。
+    - [ ] **细节**：在开发阶段尽早发现 ID 冲突，避免由于覆盖导致的逻辑混乱。
 
 ## 第二阶段：初始化流程重构 (控制力与解耦)
+
 - [ ] **消除静态初始化风险**
-    - 移除 NodeRegistry.java 中的 static {} 块。
-    - 改用显式的初始化流程（由 Mod 构造函数或 FMLCommonSetupEvent触发）。
-    - **因果关系**：夺回初始化时机的控制权，这是实现“注册事件”的前提。
-- [ ] **逻辑与元数据解耦 (重要)**
-    - 重构 NodeHelper.java 的 register 方法，支持仅注册元数据而不提供 NodeHandler。
-    - **因果关系**：允许客户端在不加载服务器逻辑（及其依赖）的情况下渲染节点 UI，是实现纯客户端编辑器和减小分发的关键。
+    - **原因**：Java 静态块的加载时机不可控。在静态块中注册会导致类加载顺序错误，甚至在 NeoForge 准备好之前就尝试访问游戏资源。
+    - [ ] **操作**：移除 `NodeRegistry.java` 中的 `static {}` 块及其中调用的 `NodeInitializer.init()`。
+    - [ ] **操作**：在模组主类（如 `MGMC.java`）的构造函数或 `FMLCommonSetupEvent` 中显式调用初始化方法。
+    - [ ] **细节**：夺回初始化控制权，确保注册流程在可控的生命周期内执行。
+- [ ] **逻辑与元数据解耦**
+    - **原因**：目前的定义与逻辑强耦合。实现解耦后，纯客户端环境（如编辑器）可以只加载节点外观而不加载复杂的服务器逻辑。
+    - [ ] **操作**：在 `NodeHelper` 中增加 `registerMetadataOnly()` 方法，仅调用 `NodeRegistry.register` 而不涉及 `NodeLogicRegistry`。
+    - [ ] **细节**：支持“纯 UI”环境，允许在没有游戏逻辑类的情况下加载节点外观定义。
 - [ ] **引入常量池管理端口 ID**
-    - 建立 NodePorts 常量类，统一管理 "exec", "value", "uuid" 等硬编码字符串。
-    - **因果关系**：减少代码中的魔数和硬编码字符串，提高代码可维护性和减少拼写错误导致的 Bug。
+    - **原因**：大量硬编码字符串（如 `"exec"`, `"value"`）散落在代码各处，一旦拼错就会导致运行时逻辑静默失败。
+    - [ ] **操作**：新建 `ltd.opens.mg.mc.core.blueprint.NodePorts` 类，定义如 `EXEC = "exec"`, `VALUE = "value"`, `A = "a"`, `B = "b"` 等常量。
+    - [ ] **操作**：替换 `MathNodes.java` 和 `ControlFlowNodes.java` 中所有的硬编码字符串为上述常量。
+    - [ ] **细节**：通过编译器检查拼写错误，提高重构安全性。
 
 ## 第三阶段：定义语法优化 (消除槽点与设计缺陷)
+
 - [ ] **减少注册时的样板代码 (Boilerplate)**
-    - 在 NodeHelper.java 中提供更高级的封装。例如数学节点只需提供 lambda 表达式，自动处理 TypeConverter 和 evaluateInput。
-    - **槽点**：目前每个数学节点（如 MathNodes.java）都在手动转换类型，重复且易错。
+    - **原因**：目前注册一个简单的加法节点需要 10 多行重复代码。过度冗余的代码降低了开发效率且掩盖了核心逻辑。
+    - [ ] **操作**：在 `NodeHelper` 中新增 `registerMathOp(BiFunction<Double, Double, Double> op)` 等高阶封装方法。
+    - [ ] **细节**：重构 `MathNodes.java`，将原先的冗长逻辑简化为 1-2 行，自动处理类型转换。
 - [ ] **规范化颜色与分类定义**
-    - 将节点颜色和分类从各节点类（如 ControlFlowNodes.java）提取到统一的主题管理类中。
-    - **槽点**：目前颜色散落在各处，难以统一调整风格。
+    - **原因**：颜色值硬编码在各个类中。如果以后想更换配色风格（如深色模式），必须修改几十个文件。
+    - [ ] **操作**：新建 `NodeThemes` 类，定义 `COLOR_MATH`, `COLOR_CONTROL`, `CATEGORY_LOGIC` 等常量。
+    - [ ] **细节**：统一管理视觉风格，实现“一处修改，全局生效”。
 - [ ] **修复执行期状态污染**
-    - 禁止在执行期间通过 node.addProperty() 修改节点定义（如 ControlFlowNodes.java 中的 _index）。
-    - **缺陷**：这种做法在并发执行或嵌套循环时会产生竞态条件和数据污染。应将中间状态存储在 NodeContext 的临时作用域中。
+    - **原因**：直接在 `JsonObject`（节点实例）上存临时变量（如 `_index`）会导致蓝图文件被修改，且在并发或递归执行时数据会相互干扰。
+    - [ ] **操作**：在 `NodeContext.java` 中增加 `Map<String, Object> runtimeData` 或类似作用域。
+    - [ ] **操作**：重构 `ControlFlowNodes.java` 中的 `loop` 节点，将 `_index` 存储在 `NodeContext` 而非修改 `node` 对象的属性。
+    - [ ] **细节**：彻底杜绝状态污染，确保脚本执行的纯净性和线程安全。
 
 ## 第四阶段：外部接入 (API 开放)
+
 - [ ] **实现自定义注册事件**
-    - 设计专用的 RegisterNodesEvent，允许其他模组通过订阅事件来注册节点。
-    - **因果关系**：基于前两个阶段的稳定基础，正式向外部提供符合 NeoForge 规范的扩展接口。
+    - **原因**：硬编码调用 `NodeInitializer.init()` 无法支持外部模组。通过事件驱动注册是现代模组开发的标准（如 NeoForge 的 `RegisterEvent`）。
+    - [ ] **操作**：创建 `RegisterNodesEvent` 类，继承自 `net.neoforged.bus.api.Event` 并实现 `IModBusEvent`。
+    - [ ] **操作**：在 `NodeInitializer` 中通过 `ModLoader.post(new RegisterNodesEvent())` 触发注册流程。
+    - [ ] **细节**：允许第三方插件以 NeoForge 标准方式扩展节点库。
 - [ ] **实现注册表冻结机制**
-    - 在初始化完成后冻结 NodeRegistry.java，禁止后续修改。
-    - **因果关系**：确保运行时环境的稳定性，防止动态注册带来的潜在不可预测行为。
+    - **原因**：允许在游戏运行时动态修改节点定义会带来不可预测的崩溃和安全隐患。
+    - [ ] **操作**：在 `NodeRegistry` 中增加 `boolean frozen` 标志位。
+    - [ ] **操作**：在所有初始化结束后调用 `freeze()`，使 `REGISTRY` 变为只读视图。
+    - [ ] **细节**：确保运行时环境的稳定性，防止非法修改。
