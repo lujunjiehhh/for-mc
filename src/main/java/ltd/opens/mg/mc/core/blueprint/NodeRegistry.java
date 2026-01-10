@@ -18,7 +18,12 @@ public class NodeRegistry {
                 "================================================================\n",
                 definition.id(), definition.registeredBy(), existing.registeredBy()
             );
-            throw new IllegalStateException(errorMsg);
+            
+            // 先在标准错误流和日志中打印，确保即便异常被拦截也能看到
+            System.err.println(errorMsg);
+            ltd.opens.mg.mc.MaingraphforMC.LOGGER.error(errorMsg);
+            
+            throw new IllegalStateException("Node ID Conflict: " + definition.id());
         }
         REGISTRY.put(definition.id(), definition);
     }
@@ -29,9 +34,5 @@ public class NodeRegistry {
 
     public static Collection<NodeDefinition> getAllDefinitions() {
         return REGISTRY.values();
-    }
-
-    static {
-        NodeInitializer.init();
     }
 }

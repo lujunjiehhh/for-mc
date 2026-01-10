@@ -22,11 +22,11 @@
     - [ ] **操作**：定义 `MGMCNodeRegistrationEvent`（继承自 `net.neoforged.bus.api.Event`），并在 `NodeInitializer` 中发布该事件。
     - [ ] **操作**：重构现有节点类（如 `MathNodes`）使用 `@SubscribeEvent` 监听该事件进行注册。
     - [ ] **细节**：彻底摆脱对 `NodeInitializer` 的手动修改依赖，实现“插件式”节点注册。
-- [ ] **消除静态初始化风险**
+- [x] **消除静态初始化风险**
     - **原因**：Java 静态块的加载时机不可控。在静态块中注册会导致类加载顺序错误，甚至在 NeoForge 准备好之前就尝试访问游戏资源。
-    - [ ] **操作**：移除 `NodeRegistry.java` 中的 `static {}` 块及其中调用的 `NodeInitializer.init()`。
-    - [ ] **操作**：在模组主类（如 `MGMC.java`）的构造函数或 `FMLCommonSetupEvent` 中显式调用初始化方法。
-    - [ ] **细节**：夺回初始化控制权，确保注册流程在可控的生命周期内执行。
+    - [x] **操作**：移除 `NodeRegistry.java` 中的 `static {}` 块及其中调用的 `NodeInitializer.init()`。
+    - [x] **操作**：在模组主类（如 `MGMC.java`）的构造函数或 `FMLCommonSetupEvent` 中显式调用初始化方法。
+    - [x] **细节**：夺回初始化控制权，确保注册流程在可控的生命周期内执行。
 - [ ] **逻辑与元数据解耦**
     - **原因**：目前的定义与逻辑强耦合。实现解耦后，纯客户端环境（如编辑器）可以只加载节点外观而不加载复杂的服务器逻辑。
     - [ ] **操作**：在 `NodeHelper` 中增加 `registerMetadataOnly()` 方法，仅调用 `NodeRegistry.register` 而不涉及 `NodeLogicRegistry`。
