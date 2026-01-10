@@ -32,11 +32,11 @@ public class MaingraphforMC {
 
     private static BlueprintManager serverManager;
     private static BlueprintRouter clientRouter;
+    private final IEventBus modEventBus;
 
     public MaingraphforMC(IEventBus modEventBus, ModContainer modContainer) {
-        // 显式初始化节点注册表，通过事件驱动方式通知各模块注册节点
-        ltd.opens.mg.mc.core.blueprint.NodeInitializer.init(modEventBus);
-
+        this.modEventBus = modEventBus;
+        
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ltd.opens.mg.mc.network.MGMCNetwork::register);
 
@@ -51,6 +51,9 @@ public class MaingraphforMC {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
+        // 在 CommonSetup 阶段初始化节点，确保所有 Mod 均已实例化，方便跨 Mod 扩展
+        ltd.opens.mg.mc.core.blueprint.NodeInitializer.init(this.modEventBus);
+        
         ltd.opens.mg.mc.core.blueprint.EventDispatcher.init();
         LOGGER.info("Maingraph for MC initialized.");
     }
