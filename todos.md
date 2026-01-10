@@ -16,12 +16,11 @@
     - [x] **细节**：报错信息采用标准化英文格式，明确指出冲突的节点 ID、当前尝试注册的 Mod 以及原始注册者 Mod，确保开发者能快速定位冲突源。
 
 ## 第二阶段：初始化流程重构 (控制力与解耦)
-
-- [ ] **引入事件驱动的节点注册机制**
+- [x] **引入事件驱动的节点注册机制**
     - **原因**：目前的 `NodeInitializer` 采用硬编码的手动调用方式，扩展性差且不支持第三方模组。通过事件总线可以实现自动发现和真正的模块化解耦。
-    - [ ] **操作**：定义 `MGMCNodeRegistrationEvent`（继承自 `net.neoforged.bus.api.Event`），并在 `NodeInitializer` 中发布该事件。
-    - [ ] **操作**：重构现有节点类（如 `MathNodes`）使用 `@SubscribeEvent` 监听该事件进行注册。
-    - [ ] **细节**：彻底摆脱对 `NodeInitializer` 的手动修改依赖，实现“插件式”节点注册。
+    - [x] **操作**：定义 `RegisterMGMCNodesEvent`（继承自 `net.neoforged.bus.api.Event`），并在 `NodeInitializer` 中发布该事件。
+    - [x] **操作**：重构现有节点类（如 `MathNodes`）使用 `@SubscribeEvent` 监听该事件进行注册。
+    - [x] **细节**：彻底摆脱对 `NodeInitializer` 的手动修改依赖，实现“插件式”节点注册。
 - [x] **消除静态初始化风险**
     - **原因**：Java 静态块的加载时机不可控。在静态块中注册会导致类加载顺序错误，甚至在 NeoForge 准备好之前就尝试访问游戏资源。
     - [x] **操作**：移除 `NodeRegistry.java` 中的 `static {}` 块及其中调用的 `NodeInitializer.init()`。

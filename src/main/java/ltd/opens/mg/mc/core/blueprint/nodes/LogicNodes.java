@@ -7,6 +7,9 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 /**
  * 比较与布尔逻辑运算节点注册
  */
@@ -15,7 +18,8 @@ public class LogicNodes {
     private static final int COLOR_FLOAT = 0xFF00FF00;
     private static final int COLOR_BOOLEAN = 0xFF920101;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // --- 比较运算 ---
         NodeHelper.setup("compare_eq", "node.mgmc.compare_eq.name")
             .category("node_category.mgmc.logic.comparison")

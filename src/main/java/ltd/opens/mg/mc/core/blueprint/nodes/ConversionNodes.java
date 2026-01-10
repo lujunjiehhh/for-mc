@@ -7,6 +7,9 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.Arrays;
 
 /**
@@ -15,7 +18,8 @@ import java.util.Arrays;
 public class ConversionNodes {
     private static final int COLOR_CONVERSION = 0xFF888888;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // 获取所有 PortType 名称作为转换选项，排除 EXEC 和 ANY
         String[] typeOptions = Arrays.stream(NodeDefinition.PortType.values())
             .filter(t -> t != NodeDefinition.PortType.EXEC && t != NodeDefinition.PortType.ANY)

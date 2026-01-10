@@ -5,6 +5,9 @@ import ltd.opens.mg.mc.core.blueprint.NodeHelper;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +20,8 @@ public class StringNodes {
     private static final int COLOR_FLOAT = 0xFFFFCC00;
     private static final int COLOR_LIST = 0xFF44AA44;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // 字符串连接 (Concat)
         NodeHelper.setup("string_concat", "node.mgmc.string_concat.name")
             .category("node_category.mgmc.variable.string")

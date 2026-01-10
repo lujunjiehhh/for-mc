@@ -7,6 +7,9 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.Random;
 
 /**
@@ -19,7 +22,8 @@ public class MathNodes {
     
     private static final Random RANDOM = new Random();
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // --- 基础数学运算 ---
         NodeHelper.setup("add_float", "node.mgmc.add_float.name")
             .category("node_category.mgmc.logic.math")

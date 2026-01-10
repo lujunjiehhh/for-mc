@@ -14,6 +14,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.UUID;
 
 /**
@@ -26,7 +29,8 @@ public class GetEntityInfoNode {
     private static final int COLOR_FLOAT = 0xFF55FF55;
     private static final int COLOR_BOOLEAN = 0xFF5555FF;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         NodeHelper.setup("get_entity_info", "node.mgmc.get_entity_info.name")
             .category("node_category.mgmc.variable.entity")
             .color(COLOR_ENTITY)

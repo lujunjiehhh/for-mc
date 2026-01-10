@@ -45,8 +45,8 @@ public class MaingraphforMC {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public MaingraphforMC(IEventBus modEventBus, ModContainer modContainer) {
-        // 显式初始化节点注册表，确保在正确的模组上下文中执行
-        ltd.opens.mg.mc.core.blueprint.NodeInitializer.init();
+        // 显式初始化节点注册表，通过事件驱动方式通知各模块注册节点
+        ltd.opens.mg.mc.core.blueprint.NodeInitializer.init(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ltd.opens.mg.mc.network.MGMCNetwork::register);

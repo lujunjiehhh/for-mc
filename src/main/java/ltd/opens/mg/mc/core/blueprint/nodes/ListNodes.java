@@ -7,6 +7,9 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +28,8 @@ public class ListNodes {
     
     private static final Random RANDOM = new Random();
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // --- 1. 获取元素 (get_list_item) ---
         NodeHelper.setup("get_list_item", "node.mgmc.get_list_item.name")
             .category("node_category.mgmc.variable.list")

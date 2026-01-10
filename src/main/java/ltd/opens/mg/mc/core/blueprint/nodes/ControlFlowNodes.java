@@ -7,6 +7,9 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 /**
  * 控制流相关节点
  */
@@ -16,7 +19,8 @@ public class ControlFlowNodes {
     private static final int COLOR_BOOLEAN = 0xFF4444FF;
     private static final int COLOR_FLOAT = 0xFFFFCC00;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // 分支节点 (Branch)
         NodeHelper.setup("branch", "node.mgmc.branch.name")
             .category("node_category.mgmc.logic.control")

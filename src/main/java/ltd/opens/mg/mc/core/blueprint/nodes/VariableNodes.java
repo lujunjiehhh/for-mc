@@ -7,8 +7,11 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 /**
- * 变量与常量节点注册
+ * 变量与常量类节点注册
  */
 public class VariableNodes {
     private static final int COLOR_VARIABLE = 0xFFFFAA00;
@@ -17,7 +20,8 @@ public class VariableNodes {
     private static final int COLOR_BOOLEAN = 0xFF920101;
     private static final int COLOR_EXEC = 0xFFFFFFFF;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // --- 常量节点 ---
         NodeHelper.setup("float", "node.mgmc.float.name")
             .category("node_category.mgmc.variable.float")

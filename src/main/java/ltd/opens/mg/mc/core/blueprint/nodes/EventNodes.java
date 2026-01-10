@@ -5,6 +5,9 @@ import ltd.opens.mg.mc.core.blueprint.NodeDefinition;
 import ltd.opens.mg.mc.core.blueprint.NodeHelper;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.Arrays;
 
 /**
@@ -21,7 +24,8 @@ public class EventNodes {
     private static final int COLOR_UUID = 0xFFCC00FF;
     private static final int COLOR_LIST = 0xFF00FFFF;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // --- 世界事件 ---
         NodeHelper.setup("on_mgrun", "node.mgmc.on_mgrun.name")
             .category("node_category.mgmc.events.world")

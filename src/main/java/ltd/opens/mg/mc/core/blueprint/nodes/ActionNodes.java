@@ -15,6 +15,9 @@ import net.minecraft.core.particles.ParticleType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.core.registries.BuiltInRegistries;
 
+import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,7 +29,8 @@ public class ActionNodes {
     private static final int COLOR_STRING = 0xFFFFAA00;
     private static final int COLOR_FLOAT = 0xFF55FF55;
 
-    public static void register() {
+    @SubscribeEvent
+    public static void onRegister(RegisterMGMCNodesEvent event) {
         // print_chat (聊天输出)
         NodeHelper.setup("print_chat", "node.mgmc.print_chat.name")
             .category("node_category.mgmc.action.player")
