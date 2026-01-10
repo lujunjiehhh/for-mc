@@ -6,6 +6,7 @@ import ltd.opens.mg.mc.core.blueprint.engine.BlueprintEngine;
 import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.routing.BlueprintRouter;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.common.NeoForge;
@@ -59,10 +60,22 @@ public class EventDispatcher {
             String routingId = metadata.routingIdExtractor().apply(event);
             if (routingId == null) continue;
 
+            // 收集所有可能的 ID
+            List<String> ids = new ArrayList<>();
+            ids.add(BlueprintRouter.GLOBAL_ID);
+            ids.add(routingId);
+            
+            // 如果是玩家相关事件，额外检查玩家 ID
+            Player player = getPlayerFromEvent(event);
+            if (player != null) {
+                ids.add(BlueprintRouter.PLAYERS_ID);
+                ids.add(player.getUUID().toString());
+            }
+
             // 获取绑定的蓝图
             var manager = MaingraphforMC.getServerManager();
             if (manager == null) continue;
-            List<JsonObject> blueprints = manager.getBlueprintsForId(serverLevel, BlueprintRouter.GLOBAL_ID, routingId);
+            List<JsonObject> blueprints = manager.getBlueprintsForId(serverLevel, ids.toArray(new String[0]));
             if (blueprints.isEmpty()) continue;
 
             // 构造 Context
@@ -74,6 +87,18 @@ public class EventDispatcher {
                 BlueprintEngine.execute(serverLevel, blueprint, def.id(), contextBuilder);
             }
         }
+    }
+
+    private static Player getPlayerFromEvent(Event event) {
+        if (event instanceof net.neoforged.neoforge.event.entity.player.PlayerEvent pe) return pe.getEntity();
+        if (event instanceof net.neoforged.neoforge.event.level.BlockEvent.BreakEvent be) return be.getPlayer();
+        if (event instanceof net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent epe) {
+            if (epe.getEntity() instanceof Player p) return p;
+        }
+        if (event instanceof net.neoforged.neoforge.event.entity.living.LivingEvent le) {
+            if (le.getEntity() instanceof Player p) return p;
+        }
+        return null;
     }
 
     private static Level getLevelFromEvent(Event event) {
