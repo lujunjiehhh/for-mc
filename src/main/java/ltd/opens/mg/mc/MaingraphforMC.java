@@ -57,7 +57,8 @@ public class MaingraphforMC {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        BlueprintRouter.init();
+        ltd.opens.mg.mc.core.blueprint.routing.BlueprintRouter.init();
+        ltd.opens.mg.mc.core.blueprint.EventDispatcher.init();
         LOGGER.info("Maingraph for MC initialized.");
     }
 
@@ -83,7 +84,8 @@ public class MaingraphforMC {
                             try {
                                 JsonObject blueprint = BlueprintServerHandler.getBlueprint(level, blueprintName);
                                 if (blueprint != null) {
-                                    BlueprintEngine.execute(level, blueprint, "on_mgrun", eventName, args, triggerUuid, triggerName, pos.x, pos.y, pos.z, 0.0);
+                                    // 统一使用带命名空间的事件 ID 或在 Engine 中处理
+                                    BlueprintEngine.execute(level, blueprint, "mgmc:on_mgrun", eventName, args, triggerUuid, triggerName, pos.x, pos.y, pos.z, 0.0);
                                 } else {
                                     context.getSource().sendFailure(Component.translatable("command.mgmc.mgrun.blueprint_not_found", blueprintName));
                                 }
@@ -104,7 +106,7 @@ public class MaingraphforMC {
                         try {
                             JsonObject blueprint = BlueprintServerHandler.getBlueprint(level, blueprintName);
                             if (blueprint != null) {
-                                BlueprintEngine.execute(level, blueprint, "on_mgrun", eventName, new String[0], triggerUuid, triggerName, pos.x, pos.y, pos.z, 0.0);
+                                BlueprintEngine.execute(level, blueprint, "mgmc:on_mgrun", eventName, new String[0], triggerUuid, triggerName, pos.x, pos.y, pos.z, 0.0);
                             } else {
                                 context.getSource().sendFailure(Component.translatable("command.mgmc.mgrun.blueprint_not_found", blueprintName));
                             }
@@ -119,7 +121,6 @@ public class MaingraphforMC {
     }
 
     public static class BlueprintServerHandler {
-        private final java.util.Map<java.util.UUID, Double[]> lastPositions = new java.util.HashMap<>();
         private static final java.util.concurrent.ExecutorService IO_EXECUTOR = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "MGMC-IO-Thread");
             t.setDaemon(true);
@@ -299,215 +300,5 @@ public class MaingraphforMC {
             return result;
         }
 
-        @SubscribeEvent
-        public void onServerTick(ServerTickEvent.Post event) {
-            var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
-            if (server == null) return;
-            if (server.getTickCount() % 5 != 0) return;
-
-            for (var player : server.getPlayerList().getPlayers()) {
-                double x = player.getX();
-                double y = player.getY();
-                double z = player.getZ();
-                java.util.UUID uuid = player.getUUID();
-
-                Double[] lastPos = lastPositions.get(uuid);
-                if (lastPos != null) {
-                    double dx = x - lastPos[0];
-                    double dy = y - lastPos[1];
-                    double dz = z - lastPos[2];
-                    double distSq = dx * dx + dy * dy + dz * dz;
-
-                    if (distSq > 0.25) {
-                        try {
-                            double speed = Math.sqrt(distSq) / 5.0; // Distance over 5 ticks
-                            ServerLevel level = (ServerLevel) player.level();
-                            // 精准路由：仅执行绑定到 global 或 players 的蓝图
-                            for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, BlueprintRouter.PLAYERS_ID)) {
-                                BlueprintEngine.execute(level, blueprint, "on_player_move", "", new String[0], 
-                                    uuid.toString(), player.getName().getString(), x, y, z, speed);
-                            }
-                            lastPositions.put(uuid, new Double[]{x, y, z});
-                        } catch (Exception e) {}
-                    }
-                } else {
-                    lastPositions.put(uuid, new Double[]{x, y, z});
-                }
-            }
-
-            if (server.getTickCount() % 100 == 0) {
-                lastPositions.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
-            }
-        }
-
-        @SubscribeEvent
-        public void onBlockBreak(BlockEvent.BreakEvent event) {
-            if (event.getLevel() instanceof ServerLevel level) {
-                String blockId = BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString();
-                String uuid = event.getPlayer().getUUID().toString();
-                String name = event.getPlayer().getName().getString();
-                var pos = event.getPos();
-                // 精准路由：执行 global 和该方块 ID 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, blockId)) {
-                    BlueprintEngine.execute(level, blueprint, "on_break_block", "", new String[0], 
-                        uuid, name, pos.getX(), pos.getY(), pos.getZ(), 0.0, blockId, "", 0.0, "");
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-            if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Player player) {
-                String blockId = BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString();
-                String uuid = player.getUUID().toString();
-                String name = player.getName().getString();
-                var pos = event.getPos();
-                // 精准路由：执行 global 和该方块 ID 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, blockId)) {
-                    BlueprintEngine.execute(level, blueprint, "on_place_block", "", new String[0], 
-                        uuid, name, pos.getX(), pos.getY(), pos.getZ(), 0.0, blockId, "", 0.0, "");
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onBlockInteract(PlayerInteractEvent.RightClickBlock event) {
-            if (event.getLevel() instanceof ServerLevel level) {
-                String blockId = BuiltInRegistries.BLOCK.getKey(level.getBlockState(event.getPos()).getBlock()).toString();
-                String uuid = event.getEntity().getUUID().toString();
-                String name = event.getEntity().getName().getString();
-                var pos = event.getPos();
-                // 精准路由：执行 global 和该方块 ID 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, blockId)) {
-                    BlueprintEngine.execute(level, blueprint, "on_interact_block", "", new String[0], 
-                        uuid, name, pos.getX(), pos.getY(), pos.getZ(), 0.0, blockId, "", 0.0, "");
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
-            if (event.getEntity().level() instanceof ServerLevel level) {
-                String uuid = event.getEntity().getUUID().toString();
-                String name = event.getEntity().getName().getString();
-                var pos = event.getEntity().position();
-                // 精准路由：执行 global 和 players 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, BlueprintRouter.PLAYERS_ID)) {
-                    BlueprintEngine.execute(level, blueprint, "on_player_join", "", new String[0], 
-                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, "");
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onLivingDeath(LivingDeathEvent event) {
-            if (event.getEntity().level() instanceof ServerLevel level) {
-                String victimUuid = event.getEntity().getUUID().toString();
-                String victimName = event.getEntity().getName().getString();
-                String attackerUuid = event.getSource().getEntity() != null ? event.getSource().getEntity().getUUID().toString() : "";
-                var pos = event.getEntity().position();
-                String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType()).toString();
-
-                if (event.getEntity() instanceof Player) {
-                    // 精准路由：针对玩家的死亡事件
-                    for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, BlueprintRouter.PLAYERS_ID)) {
-                        BlueprintEngine.execute(level, blueprint, "on_player_death", "", new String[0], 
-                            victimUuid, victimName, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, attackerUuid);
-                    }
-                }
-
-                // 精准路由：针对特定实体类型的死亡事件
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, entityId)) {
-                    BlueprintEngine.execute(level, blueprint, "on_entity_death", "", new String[0], 
-                        victimUuid, victimName, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, attackerUuid);
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-            if (event.getEntity().level() instanceof ServerLevel level) {
-                String uuid = event.getEntity().getUUID().toString();
-                String name = event.getEntity().getName().getString();
-                var pos = event.getEntity().position();
-                // 精准路由：执行 global 和 players 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, BlueprintRouter.PLAYERS_ID)) {
-                    BlueprintEngine.execute(level, blueprint, "on_player_respawn", "", new String[0], 
-                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, "");
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onLivingDamage(LivingIncomingDamageEvent event) {
-            if (event.getEntity().level() instanceof ServerLevel level) {
-                var victim = event.getEntity();
-                String victimUuid = victim.getUUID().toString();
-                String victimName = victim.getName().getString();
-                var attacker = event.getSource().getDirectEntity();
-                String attackerUuid = attacker != null ? attacker.getUUID().toString() : "";
-                String attackerName = attacker != null ? attacker.getName().getString() : "";
-                double amount = event.getAmount();
-                var pos = victim.position();
-                String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString();
-
-                java.util.List<String> routingIds = new java.util.ArrayList<>();
-                routingIds.add(BlueprintRouter.GLOBAL_ID);
-                routingIds.add(entityId);
-                if (victim instanceof Player) {
-                    routingIds.add(BlueprintRouter.PLAYERS_ID);
-                }
-
-                for (JsonObject blueprint : getBlueprintsForId(level, routingIds.toArray(new String[0]))) {
-                    BlueprintEngine.execute(level, blueprint, "on_entity_hurt", "", new String[0],
-                        victimUuid, victimName, pos.x, pos.y, pos.z, amount, "", attackerUuid, 0.0, attackerName);
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onUseItem(PlayerInteractEvent.RightClickItem event) {
-            if (event.getLevel() instanceof ServerLevel level) {
-                String itemId = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem()).toString();
-                String uuid = event.getEntity().getUUID().toString();
-                String name = event.getEntity().getName().getString();
-                var pos = event.getEntity().position();
-                // 精准路由：执行 global 和该物品 ID 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, itemId)) {
-                    BlueprintEngine.execute(level, blueprint, "on_use_item", "", new String[0], 
-                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", itemId, 0.0, "");
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onPlayerAttack(AttackEntityEvent event) {
-            if (event.getEntity().level() instanceof ServerLevel level) {
-                String attackerUuid = event.getEntity().getUUID().toString();
-                String attackerName = event.getEntity().getName().getString();
-                String victimUuid = event.getTarget().getUUID().toString();
-                var pos = event.getEntity().position();
-                // 精准路由：针对玩家的攻击事件
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, BlueprintRouter.PLAYERS_ID)) {
-                    BlueprintEngine.execute(level, blueprint, "on_player_attack", "", new String[0], 
-                        attackerUuid, attackerName, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, victimUuid);
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public void onEntitySpawn(EntityJoinLevelEvent event) {
-            if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof LivingEntity) {
-                String uuid = event.getEntity().getUUID().toString();
-                String name = event.getEntity().getName().getString();
-                var pos = event.getEntity().position();
-                String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType()).toString();
-                // 精准路由：执行 global 和该实体 ID 绑定的蓝图
-                for (JsonObject blueprint : getBlueprintsForId(level, BlueprintRouter.GLOBAL_ID, entityId)) {
-                    BlueprintEngine.execute(level, blueprint, "on_entity_spawn", "", new String[0], 
-                        uuid, name, pos.x, pos.y, pos.z, 0.0, "", "", 0.0, "");
-                }
-            }
-        }
     }
 }

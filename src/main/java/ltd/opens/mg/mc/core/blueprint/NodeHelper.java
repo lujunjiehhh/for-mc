@@ -168,6 +168,43 @@ public class NodeHelper {
         });
     }
 
+    /**
+     * 注册一个 Minecraft 事件节点。
+     * 该方法会将事件监听所需的元数据存储到 NodeDefinition 中，
+     * 以便 EventDispatcher 能够自动发现并分发事件。
+     *
+     * @param eventClass Minecraft 事件类
+     * @param contextPopulator 填充 NodeContext 的逻辑
+     * @param routingIdExtractor 提取路由 ID 的逻辑（如 blockId, itemId 等）
+     * @param valueHandler 节点数据提取逻辑
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends net.neoforged.bus.api.Event> void registerEvent(
+            Class<T> eventClass,
+            java.util.function.BiConsumer<T, ltd.opens.mg.mc.core.blueprint.engine.NodeContext.Builder> contextPopulator,
+            java.util.function.Function<T, String> routingIdExtractor,
+            SimpleValueHandler valueHandler) {
+
+        EventMetadata metadata = new EventMetadata(
+            eventClass,
+            (event, builder) -> contextPopulator.accept((T) event, builder),
+            event -> routingIdExtractor.apply((T) event)
+        );
+
+        builder.addProperty("event_metadata", metadata);
+        registerValue(valueHandler);
+    }
+
+    /**
+     * 注册一个不需要路由 ID 的 Minecraft 事件节点（如玩家加入世界）。
+     */
+    public <T extends net.neoforged.bus.api.Event> void registerEvent(
+            Class<T> eventClass,
+            java.util.function.BiConsumer<T, ltd.opens.mg.mc.core.blueprint.engine.NodeContext.Builder> contextPopulator,
+            SimpleValueHandler valueHandler) {
+        registerEvent(eventClass, contextPopulator, e -> ltd.opens.mg.mc.core.blueprint.routing.BlueprintRouter.GLOBAL_ID, valueHandler);
+    }
+
     public static abstract class NodeHandlerAdapter implements NodeHandler {
         @Override
         public void execute(com.google.gson.JsonObject node, ltd.opens.mg.mc.core.blueprint.engine.NodeContext ctx) {}
