@@ -30,11 +30,11 @@
      - **原因**：目前的定义与逻辑强耦合。实现解耦后，纯客户端环境（如编辑器）可以只加载节点外观而不加载复杂的服务器逻辑。 
      - [x] **操作**：在 `NodeHelper` 中增加 `registerMetadataOnly()` 方法，仅调用 `NodeRegistry.register` 而不涉及 `NodeLogicRegistry`。 
      - [x] **细节**：支持“纯 UI”环境，允许在没有游戏逻辑类的情况下加载节点外观定义。
-- [ ] **引入常量池管理端口 ID**
+- [x] **引入常量池管理端口 ID**
     - **原因**：大量硬编码字符串（如 `"exec"`, `"value"`）散落在代码各处，一旦拼错就会导致运行时逻辑静默失败。
-    - [ ] **操作**：新建 `ltd.opens.mg.mc.core.blueprint.NodePorts` 类，定义如 `EXEC = "exec"`, `VALUE = "value"`, `A = "a"`, `B = "b"` 等常量。
-    - [ ] **操作**：替换 `MathNodes.java` 和 `ControlFlowNodes.java` 中所有的硬编码字符串为上述常量。
-    - [ ] **细节**：通过编译器检查拼写错误，提高重构安全性。
+    - [x] **操作**：新建 `ltd.opens.mg.mc.core.blueprint.NodePorts` 类，定义如 `EXEC = "exec"`, `VALUE = "value"`, `A = "a"`, `B = "b"` 等常量。
+    - [x] **操作**：替换 `MathNodes.java` 和 `ControlFlowNodes.java` 中所有的硬编码字符串为上述常量。
+    - [x] **细节**：通过编译器检查拼写错误，提高重构安全性。
 
 ## 第三阶段：定义语法优化 (消除槽点与设计缺陷)
 
