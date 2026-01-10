@@ -38,6 +38,7 @@ public class StringNodes {
             .category("node_category.mgmc.variable.string")
             .color(NodeThemes.COLOR_NODE_VARIABLE)
             .property("dynamic_inputs", true) // 允许 UI 动态添加输入
+            .button("node.mgmc.string_combine.add_input", "add_input_indexed")
             .output(NodePorts.OUTPUT, "node.mgmc.port.output", NodeDefinition.PortType.STRING, NodeThemes.COLOR_PORT_STRING)
             .registerValue((node, portId, ctx) -> {
                 StringBuilder sb = new StringBuilder();

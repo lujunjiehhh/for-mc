@@ -126,11 +126,12 @@ public class BlueprintNodeHandler {
         for (int i = state.nodes.size() - 1; i >= 0; i--) {
             GuiNode node = state.nodes.get(i);
             if (node.isMouseOverAddButton(worldMouseX, worldMouseY)) {
-                if (node.typeId.equals("switch")) {
-                    // Add new branch to switch node
+                String action = (String) node.definition.properties().get("ui_button_action");
+                if ("add_output_modal".equals(action)) {
+                    // Add new branch/output via modal
                     Minecraft.getInstance().setScreen(new InputModalScreen(
                         screen,
-                        Component.translatable("gui.mgmc.modal.enter_value", Component.translatable("node.mgmc.switch.name")).getString(),
+                        Component.translatable("gui.mgmc.modal.enter_value", Component.translatable(node.title)).getString(),
                         "",
                         false,
                         (newText) -> {
@@ -142,8 +143,8 @@ public class BlueprintNodeHandler {
                              }
                          }
                     ));
-                } else if (node.typeId.equals("string_combine")) {
-                    // Add new input to string combine node
+                } else if ("add_input_indexed".equals(action)) {
+                    // Add new indexed input (like string_combine)
                     int maxIndex = -1;
                     for (GuiNode.NodePort port : node.inputs) {
                         if (port.id.startsWith("input_")) {

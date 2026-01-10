@@ -128,6 +128,18 @@ public class NodeHelper {
     }
 
     /**
+     * 为节点配置一个底部的交互按钮（如“添加分支”、“添加输入”）
+     * @param labelKey 按钮文字的 i18n key
+     * @param actionType 动作类型（如 "add_output_modal", "add_input_indexed"）
+     * @return NodeHelper 实例
+     */
+    public NodeHelper button(String labelKey, String actionType) {
+        builder.addProperty("ui_button_label", labelKey);
+        builder.addProperty("ui_button_action", actionType);
+        return this;
+    }
+
+    /**
      * 注册节点（元数据与逻辑同时注册）
      * @param handler 节点执行逻辑处理器
      */

@@ -36,6 +36,7 @@ public class ControlFlowNodes {
             .category("node_category.mgmc.logic.control")
             .color(NodeThemes.COLOR_NODE_CONTROL)
             .property("dynamic_outputs", true) // 标记为动态输出端口节点
+            .button("node.mgmc.switch.add_branch", "add_output_modal")
             .input(NodePorts.EXEC, "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .input(NodePorts.CONTROL, "node.mgmc.switch.port.control", NodeDefinition.PortType.ANY, NodeThemes.COLOR_PORT_ANY)
             .output(NodePorts.DEFAULT, "node.mgmc.switch.port.default", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
