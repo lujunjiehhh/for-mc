@@ -11,6 +11,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.LevelResource;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
  * 中央调度路由中心
  * 负责维护 Minecraft ID (ResourceLocation) 与蓝图文件路径之间的映射关系
@@ -18,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BlueprintRouter {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String MAPPINGS_FILE = "mgmc_blueprints/mappings.json";
     
     // 虚拟 ID 定义
     public static final String GLOBAL_ID = "mgmc:global";
@@ -28,16 +32,24 @@ public class BlueprintRouter {
     private static final Map<String, Set<String>> routingTable = new ConcurrentHashMap<>();
 
     /**
-     * 初始化路由表，从 mappings.json 加载
+     * 初始化路由表（仅供兼容性保留，实际应使用 load(ServerLevel)）
      */
     public static void init() {
-        File file = new File(MAPPINGS_FILE);
-        if (!file.exists()) {
-            save(); // 创建初始文件
+        // 默认不执行任何操作，等待世界加载时由 load() 处理
+    }
+
+    /**
+     * 从指定世界的路由表文件加载
+     */
+    public static void load(ServerLevel level) {
+        Path filePath = getMappingsPath(level);
+        if (!Files.exists(filePath)) {
+            routingTable.clear();
+            save(level); // 创建初始文件
             return;
         }
 
-        try (FileReader reader = new FileReader(file)) {
+        try (FileReader reader = new FileReader(filePath.toFile())) {
             JsonObject json = GSON.fromJson(reader, JsonObject.class);
             routingTable.clear();
             if (json != null) {
@@ -50,30 +62,35 @@ public class BlueprintRouter {
                     routingTable.put(entry.getKey(), blueprints);
                 }
             }
-            LOGGER.info("MGMC: Loaded {} ID mappings from {}", routingTable.size(), MAPPINGS_FILE);
+            LOGGER.info("MGMC: Loaded {} ID mappings from {}", routingTable.size(), filePath);
         } catch (IOException e) {
-            LOGGER.error("MGMC: Failed to load mappings.json", e);
+            LOGGER.error("MGMC: Failed to load mappings from " + filePath, e);
         }
     }
 
     /**
-     * 保存路由表到 mappings.json
+     * 保存路由表到指定世界的路由表文件
      */
-    public static synchronized void save() {
-        File dir = new File("mgmc_blueprints");
-        if (!dir.exists()) dir.mkdirs();
-
-        try (FileWriter writer = new FileWriter(MAPPINGS_FILE)) {
-            JsonObject json = new JsonObject();
-            for (Map.Entry<String, Set<String>> entry : routingTable.entrySet()) {
-                JsonArray array = new JsonArray();
-                entry.getValue().forEach(array::add);
-                json.add(entry.getKey(), array);
+    public static synchronized void save(ServerLevel level) {
+        Path filePath = getMappingsPath(level);
+        try {
+            Files.createDirectories(filePath.getParent());
+            try (FileWriter writer = new FileWriter(filePath.toFile())) {
+                JsonObject json = new JsonObject();
+                for (Map.Entry<String, Set<String>> entry : routingTable.entrySet()) {
+                    JsonArray array = new JsonArray();
+                    entry.getValue().forEach(array::add);
+                    json.add(entry.getKey(), array);
+                }
+                GSON.toJson(json, writer);
             }
-            GSON.toJson(json, writer);
         } catch (IOException e) {
-            LOGGER.error("MGMC: Failed to save mappings.json", e);
+            LOGGER.error("MGMC: Failed to save mappings to " + filePath, e);
         }
+    }
+
+    private static Path getMappingsPath(ServerLevel level) {
+        return level.getServer().getWorldPath(LevelResource.ROOT).resolve("mgmc_blueprints/.routing/mappings.json");
     }
 
     /**
@@ -84,12 +101,11 @@ public class BlueprintRouter {
     }
 
     /**
-     * 添加映射
+     * 添加映射（注意：此方法目前仅由客户端通过网络请求触发，由 handleSaveMappings 统一处理保存）
      */
     public static void addMapping(String id, String blueprintPath) {
         routingTable.computeIfAbsent(id, k -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
                     .add(blueprintPath);
-        save();
     }
 
     /**
@@ -102,7 +118,6 @@ public class BlueprintRouter {
             if (blueprints.isEmpty()) {
                 routingTable.remove(id);
             }
-            save();
         }
     }
 
@@ -123,15 +138,27 @@ public class BlueprintRouter {
     }
 
     /**
-     * 批量更新路由表
+     * 批量更新路由表并保存
      */
-    public static void updateAllMappings(Map<String, Set<String>> newMappings) {
+    public static void updateAllMappings(ServerLevel level, Map<String, Set<String>> newMappings) {
         routingTable.clear();
         newMappings.forEach((k, v) -> {
             Set<String> set = Collections.newSetFromMap(new ConcurrentHashMap<>());
             set.addAll(v);
             routingTable.put(k, set);
         });
-        save();
+        save(level);
+    }
+
+    /**
+     * 客户端专用的内存更新（不保存文件）
+     */
+    public static void clientUpdateMappings(Map<String, Set<String>> newMappings) {
+        routingTable.clear();
+        newMappings.forEach((k, v) -> {
+            Set<String> set = Collections.newSetFromMap(new ConcurrentHashMap<>());
+            set.addAll(v);
+            routingTable.put(k, set);
+        });
     }
 }

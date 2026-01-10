@@ -37,6 +37,8 @@ import net.minecraft.commands.CommandSourceStack;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+
 @Mod(MaingraphforMC.MODID)
 public class MaingraphforMC {
     public static final String MODID = "mgmc";
@@ -60,6 +62,13 @@ public class MaingraphforMC {
         ltd.opens.mg.mc.core.blueprint.routing.BlueprintRouter.init();
         ltd.opens.mg.mc.core.blueprint.EventDispatcher.init();
         LOGGER.info("Maingraph for MC initialized.");
+    }
+
+    @SubscribeEvent
+    public void onServerStarting(ServerStartingEvent event) {
+        // 当服务器启动时，加载对应世界的路由表
+        BlueprintRouter.load(event.getServer().overworld());
+        LOGGER.info("MGMC: Routing table loaded for world.");
     }
 
     @SubscribeEvent

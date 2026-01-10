@@ -113,7 +113,7 @@ public class BlueprintNetworkHandler {
             context.enqueueWork(() -> {
                 if (context.player() instanceof ServerPlayer player) {
                     if (!hasPermission(player)) return;
-                    BlueprintRouter.updateAllMappings(payload.mappings());
+                    BlueprintRouter.updateAllMappings((ServerLevel) player.level(), payload.mappings());
                     // 广播更新？目前先简单回复
                     context.reply(new ResponseMappingsPayload(BlueprintRouter.getFullRoutingTable()));
                 }
@@ -166,6 +166,9 @@ public class BlueprintNetworkHandler {
 
         public static void handleResponseMappings(final ResponseMappingsPayload payload, final IPayloadContext context) {
             context.enqueueWork(() -> {
+                // 更新客户端内存中的路由表
+                BlueprintRouter.clientUpdateMappings(payload.mappings());
+                
                 if (Minecraft.getInstance().screen instanceof BlueprintMappingScreen screen) {
                     screen.updateMappingsFromServer(payload.mappings());
                 }
