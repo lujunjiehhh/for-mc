@@ -112,7 +112,7 @@ public class BlueprintEventHandler {
                 if (connectionHandler.mouseClicked(worldMouseX, worldMouseY)) return true;
 
                 // 4. Node interactions (input box or header drag start)
-                if (nodeHandler.mouseClicked(event, worldMouseX, worldMouseY, font, screen)) return true;
+                if (nodeHandler.mouseClicked(event, isDouble, worldMouseX, worldMouseY, font, screen)) return true;
             }
         }
 

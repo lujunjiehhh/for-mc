@@ -26,7 +26,7 @@ public class BlueprintNodeHandler {
         this.state = state;
     }
 
-    public boolean mouseClicked(MouseButtonEvent event, double worldMouseX, double worldMouseY, Font font, BlueprintScreen screen) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean isDouble, double worldMouseX, double worldMouseY, Font font, BlueprintScreen screen) {
         boolean isShiftDown = event.hasShiftDown();
         boolean isCtrlDown = event.hasControlDown();
 
@@ -50,6 +50,7 @@ public class BlueprintNodeHandler {
 
         // Check for input box click check first
         for (GuiNode node : state.nodes) {
+            if (node.definition.properties().containsKey("is_marker")) continue; // Skip port checks for markers
             for (int i = 0; i < node.inputs.size(); i++) {
                 GuiNode.NodePort port = node.inputs.get(i);
                 float[] pos = node.getPortPosition(i, true);
@@ -176,9 +177,26 @@ public class BlueprintNodeHandler {
                 }
                 return true;
             }
-            if (node.isMouseOverHeader(worldMouseX, worldMouseY)) {
+            if (node.isMouseOverHeader(worldMouseX, worldMouseY) || (node.definition.properties().containsKey("is_marker") && worldMouseX >= node.x && worldMouseX <= node.x + node.width && worldMouseY >= node.y && worldMouseY <= node.y + node.height)) {
                 state.historyPendingState = BlueprintIO.serialize(state.nodes, state.connections);
                 
+                if (isDouble && node.definition.properties().containsKey("is_marker")) {
+                    // Double click marker to edit
+                    state.editingMarkerNode = node;
+                    if (state.markerEditBox == null) {
+                        state.markerEditBox = new EditBox(font, 0, 0, 200, 20, Component.empty());
+                        state.markerEditBox.setBordered(false);
+                        state.markerEditBox.setMaxLength(500);
+                        state.markerEditBox.setTextColor(0xFFFFFFFF);
+                    }
+                    String current = node.inputValues.has(ltd.opens.mg.mc.core.blueprint.NodePorts.COMMENT) ? 
+                                     node.inputValues.get(ltd.opens.mg.mc.core.blueprint.NodePorts.COMMENT).getAsString() : "";
+                    state.markerEditBox.setValue(current);
+                    state.markerEditBox.setFocused(true);
+                    state.markerEditBox.setCursorPosition(current.length());
+                    return true;
+                }
+
                 if (isShiftDown || isCtrlDown) {
                     if (node.isSelected) {
                         node.isSelected = false;
@@ -206,26 +224,6 @@ public class BlueprintNodeHandler {
                 state.nodes.remove(i);
                 state.nodes.add(node);
                 return true;
-            }
-
-            // --- Marker Editing ---
-            if (node.definition.properties().containsKey("is_marker")) {
-                if (worldMouseX >= node.x && worldMouseX <= node.x + node.width && worldMouseY >= node.y && worldMouseY <= node.y + node.height) {
-                    // Start editing marker in-place
-                    state.editingMarkerNode = node;
-                    if (state.markerEditBox == null) {
-                        state.markerEditBox = new EditBox(font, 0, 0, 200, 20, Component.empty());
-                        state.markerEditBox.setBordered(false);
-                        state.markerEditBox.setMaxLength(500); // Increased limit as requested
-                        state.markerEditBox.setTextColor(0xFFFFFFFF); // Brighter text for editing
-                    }
-                    String current = node.inputValues.has(ltd.opens.mg.mc.core.blueprint.NodePorts.COMMENT) ? 
-                                     node.inputValues.get(ltd.opens.mg.mc.core.blueprint.NodePorts.COMMENT).getAsString() : "";
-                    state.markerEditBox.setValue(current);
-                    state.markerEditBox.setFocused(true);
-                    state.markerEditBox.setCursorPosition(current.length()); // Move cursor to end
-                    return true;
-                }
             }
         }
 
