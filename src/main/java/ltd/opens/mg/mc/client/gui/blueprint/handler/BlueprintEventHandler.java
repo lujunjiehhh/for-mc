@@ -65,7 +65,7 @@ public class BlueprintEventHandler {
                 if (connectionHandler.mouseClicked(worldMouseX, worldMouseY)) return true;
 
                 // 4. Node interactions (input box or header drag start)
-                if (nodeHandler.mouseClicked(worldMouseX, worldMouseY, font, screen)) return true;
+                if (nodeHandler.mouseClicked(event, worldMouseX, worldMouseY, font, screen)) return true;
             }
         }
 
@@ -93,7 +93,7 @@ public class BlueprintEventHandler {
         if (connectionHandler.mouseReleased(worldMouseX, worldMouseY)) return true;
 
         // 3. Node interactions (drag end)
-        if (nodeHandler.mouseReleased()) return true;
+        if (nodeHandler.mouseReleased(event)) return true;
 
         return false;
     }
@@ -112,7 +112,7 @@ public class BlueprintEventHandler {
         double worldMouseY = (mouseY - state.panY) / state.zoom;
 
         // 2. Node interactions (node drag)
-        if (nodeHandler.mouseDragged(worldMouseX, worldMouseY)) return true;
+        if (nodeHandler.mouseDragged(worldMouseX, worldMouseY, mouseX, mouseY)) return true;
 
         return false;
     }
@@ -125,7 +125,7 @@ public class BlueprintEventHandler {
     public boolean keyPressed(KeyEvent event) {
         if (state.readOnly) return false;
         if (menuHandler.keyPressed(event)) return true;
-        return nodeHandler.keyPressed(event.key());
+        return nodeHandler.keyPressed(event);
     }
 
     public boolean charTyped(CharacterEvent event) {

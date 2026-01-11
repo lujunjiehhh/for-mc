@@ -211,12 +211,18 @@ public class BlueprintIO {
     }
 
     public static void loadFromString(String json, List<GuiNode> nodes, List<GuiConnection> connections) {
+        loadFromString(json, nodes, connections, true);
+    }
+
+    public static void loadFromString(String json, List<GuiNode> nodes, List<GuiConnection> connections, boolean clear) {
         try {
             if (json == null || json.isEmpty()) return;
             JsonObject root = JsonParser.parseString(json).getAsJsonObject();
             
-            nodes.clear();
-            connections.clear();
+            if (clear) {
+                nodes.clear();
+                connections.clear();
+            }
             
             Map<String, GuiNode> nodeMap = new HashMap<>();
             

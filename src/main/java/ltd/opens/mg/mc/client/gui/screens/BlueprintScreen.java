@@ -156,6 +156,9 @@ public class BlueprintScreen extends Screen {
         }
 
         guiGraphics.pose().popMatrix();
+
+        // Selection Box (Screen Space)
+        BlueprintRenderer.drawSelectionBox(guiGraphics, state);
         
         // --- Modern Top Bar (Narrower) ---
         int barHeight = 26;
