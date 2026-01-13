@@ -158,6 +158,13 @@ public class BlueprintNetworkHandler {
                     var manager = MaingraphforMC.getServerManager();
                     if (manager == null) return;
                     manager.duplicateBlueprint((ServerLevel) player.level(), payload.sourceName(), payload.targetName());
+                    
+                    // Reply with updated list
+                    var blueprints = manager.getAllBlueprints((ServerLevel) player.level());
+                    java.util.List<String> names = blueprints.stream()
+                            .map(bp -> bp.has("name") ? bp.get("name").getAsString() : "unknown")
+                            .collect(Collectors.toList());
+                    context.reply(new ResponseBlueprintListPayload(names));
                 }
             });
         }

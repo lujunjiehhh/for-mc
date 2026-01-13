@@ -13,12 +13,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import ltd.opens.mg.mc.network.payloads.*;
-import ltd.opens.mg.mc.client.gui.blueprint.io.BlueprintIO;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class BlueprintSelectionScreen extends Screen {
     private BlueprintList list;
@@ -66,13 +61,10 @@ public class BlueprintSelectionScreen extends Screen {
                 if (!name.endsWith(".json")) name += ".json";
                 
                 this.setFocused(null);
-                if (isRemoteServer()) {
-                    if (Minecraft.getInstance().getConnection() != null) Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new SaveBlueprintPayload(name, "{}", -1)));
-                    Minecraft.getInstance().setScreen(new BlueprintScreen(this, name));
-                } else {
-                    Path newFile = MaingraphforMCClient.getBlueprintsDir().resolve(name);
-                    Minecraft.getInstance().setScreen(new BlueprintScreen(this, newFile));
+                if (Minecraft.getInstance().getConnection() != null) {
+                    Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new SaveBlueprintPayload(name, "{}", -1)));
                 }
+                Minecraft.getInstance().setScreen(new BlueprintScreen(this, name));
             }
         }).bounds(createX + createWidth + 5, createY, 50, createHeight).build();
         this.addRenderableWidget(this.createButton);
@@ -89,17 +81,8 @@ public class BlueprintSelectionScreen extends Screen {
             if (this.list.getSelected() != null) {
                 BlueprintEntry entry = this.list.getSelected();
                 this.setFocused(null);
-                if (entry.path != null) {
-                    int version = ltd.opens.mg.mc.client.gui.blueprint.io.BlueprintIO.getFormatVersion(entry.path);
-                    if (version < 5) {
-                        Minecraft.getInstance().setScreen(new VersionWarningScreen(this, entry.path, version));
-                    } else {
-                        Minecraft.getInstance().setScreen(new BlueprintScreen(this, entry.path));
-                    }
-                } else {
-                    // Remote blueprints - version check will happen in BlueprintScreen.loadFromNetwork
-                    Minecraft.getInstance().setScreen(new BlueprintScreen(this, entry.name));
-                }
+                // Version check will happen in BlueprintScreen.loadFromNetwork after receiving data from server
+                Minecraft.getInstance().setScreen(new BlueprintScreen(this, entry.name));
             }
         }).bounds(startX, buttonY, buttonWidth, buttonHeight).build();
         
@@ -134,36 +117,11 @@ public class BlueprintSelectionScreen extends Screen {
         this.addRenderableWidget(this.renameBox);
     }
 
-    private boolean isRemoteServer() {
-        return Minecraft.getInstance().getSingleplayerServer() == null && 
-               Minecraft.getInstance().level != null && 
-               Minecraft.getInstance().level.isClientSide();
-    }
-
     private void refreshFileList() {
         this.list.clearEntries();
-        if (isRemoteServer()) {
-             // Multiplayer: ONLY request from server
-             if (Minecraft.getInstance().getConnection() != null) {
-                 Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RequestBlueprintListPayload()));
-             }
-         } else {
-            // Singleplayer/Local: Use local files (which are in the world directory)
-            try {
-                Path dir = MaingraphforMCClient.getBlueprintsDir();
-                if (Files.exists(dir)) {
-                    try (var stream = Files.list(dir)) {
-                        List<Path> files = stream
-                            .filter(p -> p.toString().endsWith(".json"))
-                            .collect(Collectors.toList());
-                        for (Path file : files) {
-                            this.list.add(new BlueprintEntry(file));
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                ltd.opens.mg.mc.MaingraphforMC.LOGGER.error("Failed to list local blueprints", e);
-            }
+        // Always request from server (works for both local and remote servers)
+        if (Minecraft.getInstance().getConnection() != null) {
+            Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RequestBlueprintListPayload()));
         }
     }
 
@@ -276,17 +234,8 @@ public class BlueprintSelectionScreen extends Screen {
             if (!newName.isEmpty()) {
                 if (!newName.endsWith(".json")) newName += ".json";
                 
-                if (isRemoteServer()) {
-                    if (Minecraft.getInstance().getConnection() != null) {
-                        Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RenameBlueprintPayload(contextMenuEntry.name, newName)));
-                    }
-                } else if (contextMenuEntry.path != null) {
-                    try {
-                        Files.move(contextMenuEntry.path, contextMenuEntry.path.resolveSibling(newName));
-                        refreshFileList();
-                    } catch (IOException e) {
-                        ltd.opens.mg.mc.MaingraphforMC.LOGGER.error("Failed to rename local blueprint", e);
-                    }
+                if (Minecraft.getInstance().getConnection() != null) {
+                    Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RenameBlueprintPayload(contextMenuEntry.name, newName)));
                 }
             }
         }
@@ -299,17 +248,8 @@ public class BlueprintSelectionScreen extends Screen {
 
     private void deleteBlueprint() {
         if (contextMenuEntry != null) {
-            if (isRemoteServer()) {
-                if (Minecraft.getInstance().getConnection() != null) {
-                    Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new DeleteBlueprintPayload(contextMenuEntry.name)));
-                }
-            } else if (contextMenuEntry.path != null) {
-                try {
-                    Files.deleteIfExists(contextMenuEntry.path);
-                    refreshFileList();
-                } catch (IOException e) {
-                    ltd.opens.mg.mc.MaingraphforMC.LOGGER.error("Failed to delete local blueprint", e);
-                }
+            if (Minecraft.getInstance().getConnection() != null) {
+                Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new DeleteBlueprintPayload(contextMenuEntry.name)));
             }
         }
     }
@@ -362,18 +302,10 @@ public class BlueprintSelectionScreen extends Screen {
     }
 
     class BlueprintEntry extends ObjectSelectionList.Entry<BlueprintEntry> {
-        final Path path;
         final String name;
         private long lastClickTime;
 
-        public BlueprintEntry(Path path) {
-            this.path = path;
-            String fileName = path.getFileName().toString();
-            this.name = fileName.endsWith(".json") ? fileName.substring(0, fileName.length() - 5) : fileName;
-        }
-
         public BlueprintEntry(String name) {
-            this.path = null;
             this.name = name.endsWith(".json") ? name.substring(0, name.length() - 5) : name;
         }
 
@@ -426,16 +358,7 @@ public class BlueprintSelectionScreen extends Screen {
             if (now - lastClickTime < 250L) {
                 // Double click
                 BlueprintSelectionScreen.this.setFocused(null);
-                if (this.path != null) {
-                    int version = BlueprintIO.getFormatVersion(this.path);
-                    if (version < 5) {
-                        Minecraft.getInstance().setScreen(new VersionWarningScreen(BlueprintSelectionScreen.this, this.path, version));
-                    } else {
-                        Minecraft.getInstance().setScreen(new BlueprintScreen(BlueprintSelectionScreen.this, this.path));
-                    }
-                } else {
-                    Minecraft.getInstance().setScreen(new BlueprintScreen(BlueprintSelectionScreen.this, this.name));
-                }
+                Minecraft.getInstance().setScreen(new BlueprintScreen(BlueprintSelectionScreen.this, this.name));
                 return true;
             }
             lastClickTime = now;

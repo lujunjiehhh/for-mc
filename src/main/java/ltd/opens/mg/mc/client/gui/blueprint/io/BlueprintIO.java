@@ -7,8 +7,6 @@ import ltd.opens.mg.mc.MaingraphforMC;
 import ltd.opens.mg.mc.core.blueprint.NodeDefinition;
 import ltd.opens.mg.mc.core.blueprint.NodeRegistry;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 public class BlueprintIO {
@@ -147,24 +145,6 @@ public class BlueprintIO {
         }
     }
 
-    public static void save(Path dataFile, List<GuiNode> nodes, List<GuiConnection> connections) {
-        // Special Case: "wwssadadab" is a magic name that doesn't save to JSON
-        if (dataFile != null && dataFile.getFileName().toString().startsWith("wwssadadab")) {
-            MaingraphforMC.LOGGER.info("Magic blueprint detected: Skipping JSON generation for {}", dataFile.getFileName());
-            return;
-        }
-
-        try {
-            String json = serialize(nodes, connections);
-            if (json != null) {
-                Files.writeString(dataFile, json);
-                MaingraphforMC.LOGGER.info("Saved blueprint to {}", dataFile.toAbsolutePath());
-            }
-        } catch (Exception e) {
-            MaingraphforMC.LOGGER.error("Failed to save blueprint", e);
-        }
-    }
-
     private static GuiConnection findConnectionTo(GuiNode node, String portName, List<GuiConnection> connections) {
         for (GuiConnection conn : connections) {
             if (conn.to == node && conn.toPort.equals(portName)) {
@@ -181,32 +161,6 @@ public class BlueprintIO {
             return root.has("format_version") ? root.get("format_version").getAsInt() : 1;
         } catch (Exception e) {
             return 1;
-        }
-    }
-
-    public static int getFormatVersion(Path dataFile) {
-        try {
-            if (!Files.exists(dataFile)) return 1;
-            String json = Files.readString(dataFile);
-            return getFormatVersion(json);
-        } catch (Exception e) {
-            return 1;
-        }
-    }
-
-    public static void load(Path dataFile, List<GuiNode> nodes, List<GuiConnection> connections) {
-        // Special Case: "wwssadadab" - Lock blueprint and tile nodes
-        if (dataFile != null && dataFile.getFileName().toString().startsWith("wwssadadab")) {
-            loadMagicBlueprint(nodes, connections);
-            return;
-        }
-
-        try {
-            if (!Files.exists(dataFile)) return;
-            String json = Files.readString(dataFile);
-            loadFromString(json, nodes, connections);
-        } catch (Exception e) {
-            MaingraphforMC.LOGGER.error("Failed to load blueprint", e);
         }
     }
 

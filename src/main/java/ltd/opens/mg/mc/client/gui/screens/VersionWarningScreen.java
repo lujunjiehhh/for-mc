@@ -4,26 +4,17 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import java.nio.file.Path;
-import java.nio.file.Files;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
+import ltd.opens.mg.mc.network.payloads.DuplicateBlueprintPayload;
+
 public class VersionWarningScreen extends Screen {
     private final Screen parent;
-    private final Path dataFile;
     private final String blueprintName;
     private final int version;
-
-    public VersionWarningScreen(Screen parent, Path dataFile, int version) {
-        super(Component.translatable("gui.mgmc.version_warning.title"));
-        this.parent = parent;
-        this.dataFile = dataFile;
-        this.blueprintName = null;
-        this.version = version;
-    }
 
     public VersionWarningScreen(Screen parent, String blueprintName, int version) {
         super(Component.translatable("gui.mgmc.version_warning.title"));
         this.parent = parent;
-        this.dataFile = null;
         this.blueprintName = blueprintName;
         this.version = version;
     }
@@ -50,36 +41,14 @@ public class VersionWarningScreen extends Screen {
     }
 
     private void copyAndOpen() {
-        if (dataFile != null) {
-            try {
-                String fileName = dataFile.getFileName().toString();
-                String baseName = fileName.endsWith(".json") ? fileName.substring(0, fileName.length() - 5) : fileName;
-                Path newFile = dataFile.getParent().resolve(baseName + "_new.json");
-                
-                // If destination exists, try adding a number
-                int i = 1;
-                while (Files.exists(newFile)) {
-                    newFile = dataFile.getParent().resolve(baseName + "_new_" + i + ".json");
-                    i++;
-                }
-                
-                Files.copy(dataFile, newFile);
-                this.minecraft.setScreen(new BlueprintScreen(this.parent, newFile, true));
-            } catch (Exception e) {
-                e.printStackTrace();
-                openAnyway(); // Fallback
-            }
-        } else if (blueprintName != null) {
-            // Multiplayer: Request server to duplicate the file
+        if (blueprintName != null) {
+            // Request server to duplicate the file (works for both local and remote servers)
             String baseName = blueprintName.endsWith(".json") ? blueprintName.substring(0, blueprintName.length() - 5) : blueprintName;
             String newName = baseName + "_new.json";
             
             if (this.minecraft.getConnection() != null) {
-                // We don't have a way to check if file exists on server easily here, 
-                // but the DuplicateBlueprintPayload will just overwrite or fail silently on server for now.
-                // In a real scenario, we might want a response payload.
-                this.minecraft.getConnection().send(new net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket(
-                    new ltd.opens.mg.mc.network.payloads.DuplicateBlueprintPayload(blueprintName, newName)
+                this.minecraft.getConnection().send(new ServerboundCustomPayloadPacket(
+                    new DuplicateBlueprintPayload(blueprintName, newName)
                 ));
                 
                 // Open the NEW blueprint with forceOpen=true to avoid infinite loop
@@ -91,11 +60,7 @@ public class VersionWarningScreen extends Screen {
     }
 
     private void openAnyway() {
-        if (dataFile != null) {
-            this.minecraft.setScreen(new BlueprintScreen(this.parent, dataFile, true));
-        } else {
-            this.minecraft.setScreen(new BlueprintScreen(this.parent, blueprintName, true));
-        }
+        this.minecraft.setScreen(new BlueprintScreen(this.parent, blueprintName, true));
     }
 
     @Override

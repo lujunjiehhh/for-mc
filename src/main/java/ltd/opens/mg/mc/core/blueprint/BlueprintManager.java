@@ -197,6 +197,7 @@ public class BlueprintManager {
             Path targetFile = getBlueprintsDir(level).resolve(targetName);
             if (Files.exists(sourceFile)) {
                 Files.copy(sourceFile, targetFile);
+                blueprintCache.remove(targetName);
                 synchronized (allBlueprintsCache) {
                     lastAllBlueprintsRefresh = 0;
                 }
