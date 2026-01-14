@@ -1,11 +1,10 @@
 package ltd.opens.mg.mc.client.gui.screens;
 
+import ltd.opens.mg.mc.client.network.NetworkService;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
-import ltd.opens.mg.mc.network.payloads.DuplicateBlueprintPayload;
 
 public class VersionWarningScreen extends Screen {
     private final Screen parent;
@@ -46,16 +45,10 @@ public class VersionWarningScreen extends Screen {
             String baseName = blueprintName.endsWith(".json") ? blueprintName.substring(0, blueprintName.length() - 5) : blueprintName;
             String newName = baseName + "_new.json";
             
-            if (this.minecraft.getConnection() != null) {
-                this.minecraft.getConnection().send(new ServerboundCustomPayloadPacket(
-                    new DuplicateBlueprintPayload(blueprintName, newName)
-                ));
-                
-                // Open the NEW blueprint with forceOpen=true to avoid infinite loop
-                this.minecraft.setScreen(new BlueprintScreen(this.parent, newName, true));
-            } else {
-                openAnyway();
-            }
+            NetworkService.getInstance().duplicateBlueprint(blueprintName, newName);
+            
+            // Open the NEW blueprint with forceOpen=true to avoid infinite loop
+            this.minecraft.setScreen(new BlueprintScreen(this.parent, newName, true));
         }
     }
 

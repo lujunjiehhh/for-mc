@@ -1,6 +1,6 @@
 package ltd.opens.mg.mc.client.gui.screens;
 
-import ltd.opens.mg.mc.MaingraphforMCClient;
+import ltd.opens.mg.mc.client.network.NetworkService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -11,8 +11,6 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
-import ltd.opens.mg.mc.network.payloads.*;
 import java.util.List;
 
 public class BlueprintSelectionScreen extends Screen {
@@ -61,9 +59,7 @@ public class BlueprintSelectionScreen extends Screen {
                 if (!name.endsWith(".json")) name += ".json";
                 
                 this.setFocused(null);
-                if (Minecraft.getInstance().getConnection() != null) {
-                    Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new SaveBlueprintPayload(name, "{}", -1)));
-                }
+                NetworkService.getInstance().saveBlueprint(name, "{}", -1);
                 Minecraft.getInstance().setScreen(new BlueprintScreen(this, name));
             }
         }).bounds(createX + createWidth + 5, createY, 50, createHeight).build();
@@ -120,9 +116,7 @@ public class BlueprintSelectionScreen extends Screen {
     private void refreshFileList() {
         this.list.clearEntries();
         // Always request from server (works for both local and remote servers)
-        if (Minecraft.getInstance().getConnection() != null) {
-            Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RequestBlueprintListPayload()));
-        }
+        NetworkService.getInstance().requestBlueprintList();
     }
 
     public void updateListFromServer(List<String> blueprints) {
@@ -243,10 +237,7 @@ public class BlueprintSelectionScreen extends Screen {
             String newName = renameBox.getValue().trim();
             if (!newName.isEmpty()) {
                 if (!newName.endsWith(".json")) newName += ".json";
-                
-                if (Minecraft.getInstance().getConnection() != null) {
-                    Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RenameBlueprintPayload(contextMenuEntry.name, newName)));
-                }
+                NetworkService.getInstance().renameBlueprint(contextMenuEntry.name, newName);
             }
         }
         isRenaming = false;
@@ -258,9 +249,7 @@ public class BlueprintSelectionScreen extends Screen {
 
     private void deleteBlueprint() {
         if (contextMenuEntry != null) {
-            if (Minecraft.getInstance().getConnection() != null) {
-                Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new DeleteBlueprintPayload(contextMenuEntry.name)));
-            }
+            NetworkService.getInstance().deleteBlueprint(contextMenuEntry.name);
         }
     }
 
@@ -280,10 +269,7 @@ public class BlueprintSelectionScreen extends Screen {
             }
             
             String newName = baseName + "_copy_" + suffix.toString() + ".json";
-            
-            if (Minecraft.getInstance().getConnection() != null) {
-                Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new DuplicateBlueprintPayload(contextMenuEntry.name, newName)));
-            }
+            NetworkService.getInstance().duplicateBlueprint(contextMenuEntry.name, newName);
         }
     }
 

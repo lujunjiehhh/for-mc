@@ -1,14 +1,12 @@
 package ltd.opens.mg.mc.client.gui.screens;
 
-import ltd.opens.mg.mc.MaingraphforMCClient;
-import ltd.opens.mg.mc.network.payloads.RequestBlueprintListPayload;
+import ltd.opens.mg.mc.client.network.NetworkService;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.client.input.MouseButtonEvent;
 
 import java.util.List;
@@ -50,9 +48,7 @@ public class BlueprintSelectionForMappingScreen extends Screen {
 
     private void refreshList() {
         this.list.clearEntries();
-        if (Minecraft.getInstance().getConnection() != null) {
-            Minecraft.getInstance().getConnection().send(new ServerboundCustomPayloadPacket(new RequestBlueprintListPayload()));
-        }
+        NetworkService.getInstance().requestBlueprintList();
     }
 
     public void updateListFromServer(List<String> blueprints) {
