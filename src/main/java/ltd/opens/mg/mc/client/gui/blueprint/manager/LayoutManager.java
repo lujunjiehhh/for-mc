@@ -3,7 +3,6 @@ package ltd.opens.mg.mc.client.gui.blueprint.manager;
 import ltd.opens.mg.mc.client.gui.blueprint.BlueprintState;
 import ltd.opens.mg.mc.client.gui.components.GuiConnection;
 import ltd.opens.mg.mc.client.gui.components.GuiNode;
-import ltd.opens.mg.mc.core.blueprint.NodeDefinition;
 import net.minecraft.network.chat.Component;
 
 import java.util.*;

@@ -246,64 +246,6 @@ public class BlueprintIO {
         }
     }
 
-    private static void loadMagicBlueprint(List<GuiNode> nodes, List<GuiConnection> connections) {
-        nodes.clear();
-        connections.clear();
-        
-        Collection<NodeDefinition> allDefs = NodeRegistry.getAllDefinitions();
-        
-        // Group by category for better organization
-        Map<String, List<NodeDefinition>> byCategory = new TreeMap<>();
-        for (NodeDefinition def : allDefs) {
-            byCategory.computeIfAbsent(def.category(), k -> new ArrayList<>()).add(def);
-        }
-
-        int startX = 50;
-        int currentY = 50;
-        int columnSpacing = 30;
-        int rowSpacing = 40;
-
-        for (Map.Entry<String, List<NodeDefinition>> entry : byCategory.entrySet()) {
-            int currentX = startX;
-            int maxRowHeight = 0;
-            
-            // Add category label as a special note? (Optional, maybe later)
-            
-            for (NodeDefinition def : entry.getValue()) {
-                // Estimate size
-                int maxPorts = Math.max(def.inputs().size(), def.outputs().size());
-                int estimatedHeight = 15 + 10 + maxPorts * 15 + 10;
-                
-                // Estimate width
-                int maxInputW = 0;
-                for (NodeDefinition.PortDefinition p : def.inputs()) {
-                    maxInputW = Math.max(maxInputW, 10 + p.displayName().length() * 6 + (p.hasInput() ? 55 : 0));
-                }
-                int maxOutputW = 0;
-                for (NodeDefinition.PortDefinition p : def.outputs()) {
-                    maxOutputW = Math.max(maxOutputW, 10 + p.displayName().length() * 6);
-                }
-                int estimatedWidth = Math.max(120, Math.max(def.name().length() * 7, maxInputW + maxOutputW + 25));
-
-                GuiNode node = new GuiNode(def, currentX, currentY);
-                nodes.add(node);
-                
-                currentX += estimatedWidth + columnSpacing;
-                maxRowHeight = Math.max(maxRowHeight, estimatedHeight);
-                
-                // Wrap to next line if row gets too long
-                if (currentX > 2500) {
-                    currentX = startX;
-                    currentY += maxRowHeight + rowSpacing;
-                    maxRowHeight = 0;
-                }
-            }
-            
-            // Next category starts on a new row with extra spacing
-            currentY += maxRowHeight + rowSpacing * 2;
-        }
-    }
-
     private static int getPortColor(NodeDefinition.PortType type) {
         switch (type) {
             case EXEC: return 0xFFFFFFFF;
