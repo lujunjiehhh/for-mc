@@ -52,6 +52,11 @@ public class MGMCNetwork {
             SaveMappingsPayload.STREAM_CODEC,
             BlueprintNetworkHandler.Server::handleSaveMappings
         );
+        registrar.playToServer(
+            WorkbenchActionPayload.TYPE,
+            WorkbenchActionPayload.STREAM_CODEC,
+            BlueprintNetworkHandler.Server::handleWorkbenchAction
+        );
 
         // Server -> Client
         registrar.playToClient(

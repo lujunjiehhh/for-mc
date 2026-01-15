@@ -40,6 +40,7 @@ public class MaingraphforMCClient {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         modEventBus.addListener(this::onRegisterKeyMappings);
         modEventBus.addListener(this::onClientSetup);
+        modEventBus.addListener(ltd.opens.mg.mc.client.ClientSetup::registerScreens);
         
         // Register for game events (ClientTickEvent, etc.)
         NeoForge.EVENT_BUS.register(this);

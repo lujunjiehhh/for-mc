@@ -37,6 +37,7 @@ public class MaingraphforMC {
     public MaingraphforMC(IEventBus modEventBus, ModContainer modContainer) {
         this.modEventBus = modEventBus;
         
+        ltd.opens.mg.mc.core.registry.MGMCRegistries.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ltd.opens.mg.mc.network.MGMCNetwork::register);
 
@@ -87,6 +88,67 @@ public class MaingraphforMC {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("mgmc")
+            .then(Commands.literal("workbench")
+                .executes(context -> {
+                    if (context.getSource().getPlayer() != null) {
+                        net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+                        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (id, inv, p) -> new ltd.opens.mg.mc.core.blueprint.inventory.BlueprintWorkbenchMenu(id, inv),
+                            Component.literal("蓝图工作台")
+                        ));
+                    }
+                    return 1;
+                })
+            )
+            .then(Commands.literal("bind")
+                .then(Commands.argument("blueprint", StringArgumentType.string())
+                    .executes(context -> {
+                        if (context.getSource().getPlayer() != null) {
+                            net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+                            net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                            if (stack.isEmpty()) {
+                                context.getSource().sendFailure(Component.literal("请手持物品以绑定蓝图"));
+                                return 0;
+                            }
+                            String path = StringArgumentType.getString(context, "blueprint");
+                            java.util.List<String> scripts = new java.util.ArrayList<>(stack.getOrDefault(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), java.util.Collections.emptyList()));
+                            if (!scripts.contains(path)) {
+                                scripts.add(path);
+                                stack.set(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), scripts);
+                                context.getSource().sendSuccess(() -> Component.literal("已将蓝图 " + path + " 绑定到物品"), true);
+                            } else {
+                                context.getSource().sendFailure(Component.literal("蓝图已绑定"));
+                            }
+                        }
+                        return 1;
+                    })
+                )
+            )
+            .then(Commands.literal("unbind")
+                .then(Commands.argument("blueprint", StringArgumentType.string())
+                    .executes(context -> {
+                        if (context.getSource().getPlayer() != null) {
+                            net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+                            net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                            if (stack.isEmpty()) return 0;
+                            String path = StringArgumentType.getString(context, "blueprint");
+                            java.util.List<String> scripts = new java.util.ArrayList<>(stack.getOrDefault(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), java.util.Collections.emptyList()));
+                            if (scripts.remove(path)) {
+                                if (scripts.isEmpty()) {
+                                    stack.remove(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get());
+                                } else {
+                                    stack.set(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), scripts);
+                                }
+                                context.getSource().sendSuccess(() -> Component.literal("已解绑蓝图 " + path), true);
+                            }
+                        }
+                        return 1;
+                    })
+                )
+            )
+        );
+
         event.getDispatcher().register(Commands.literal("mgrun")
             .requires(s -> true)
             .then(Commands.argument("blueprint", StringArgumentType.word())

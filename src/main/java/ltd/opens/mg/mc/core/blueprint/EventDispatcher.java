@@ -7,6 +7,7 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeContext;
 import ltd.opens.mg.mc.core.blueprint.routing.BlueprintRouter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.Event;
 import net.neoforged.neoforge.common.NeoForge;
@@ -102,7 +103,14 @@ public class EventDispatcher {
             // 获取绑定的蓝图
             var manager = MaingraphforMC.getServerManager();
             if (manager == null) continue;
-            List<JsonObject> blueprints = manager.getBlueprintsForId(serverLevel, ids.toArray(new String[0]));
+            List<JsonObject> blueprints = new ArrayList<>(manager.getBlueprintsForId(serverLevel, ids.toArray(new String[0])));
+
+            // 检查物品绑定的脚本
+            if (player != null) {
+                checkItemScripts(player.getMainHandItem(), serverLevel, blueprints);
+                checkItemScripts(player.getOffhandItem(), serverLevel, blueprints);
+            }
+
             if (blueprints.isEmpty()) continue;
 
             // 构造 Context
@@ -123,4 +131,19 @@ public class EventDispatcher {
     }
 
     // 移除硬编码方法
+    private static void checkItemScripts(net.minecraft.world.item.ItemStack stack, ServerLevel level, List<JsonObject> out) {
+        if (stack.isEmpty()) return;
+        var manager = MaingraphforMC.getServerManager();
+        if (manager == null) return;
+        
+        List<String> scripts = stack.get(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get());
+        if (scripts != null) {
+            for (String path : scripts) {
+                JsonObject bp = manager.getBlueprint(level, path);
+                if (bp != null) {
+                    out.add(bp);
+                }
+            }
+        }
+    }
 }
