@@ -68,19 +68,15 @@ public class EventDispatcher {
             return matched.isEmpty() ? Collections.emptyList() : matched;
         });
 
-        if (defs.isEmpty()) return;
-
-        // 获取 Level (通常事件都能拿到 Level)
-        Level level = getLevelFromEvent(event);
-        if (!(level instanceof ServerLevel serverLevel)) {
-            // 使用 debug 级别记录，生产环境默认不显示
-            MaingraphforMC.LOGGER.debug("MGMC: Failed to get ServerLevel for event: {}", concreteClass.getName());
-            return;
-        }
-
+        // 获取 Level (通过 ContextProvider)
         for (NodeDefinition def : defs) {
             EventMetadata metadata = (EventMetadata) def.properties().get("event_metadata");
             if (metadata == null) continue;
+
+            Level level = metadata.contextProvider().getLevel(event);
+            if (!(level instanceof ServerLevel serverLevel)) {
+                continue;
+            }
 
             String routingId = null;
             try {
@@ -96,8 +92,8 @@ public class EventDispatcher {
             ids.add(BlueprintRouter.GLOBAL_ID);
             ids.add(routingId);
             
-            // 如果是玩家相关事件，额外检查玩家 ID
-            Player player = getPlayerFromEvent(event);
+            // 获取 Player (通过 ContextProvider)
+            Player player = metadata.contextProvider().getPlayer(event);
             if (player != null) {
                 ids.add(BlueprintRouter.PLAYERS_ID);
                 ids.add(player.getUUID().toString());
@@ -126,29 +122,5 @@ public class EventDispatcher {
         }
     }
 
-    private static Player getPlayerFromEvent(Event event) {
-        if (event instanceof net.neoforged.neoforge.event.entity.player.PlayerEvent pe) return pe.getEntity();
-        if (event instanceof net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent iepe) return iepe.getPlayer();
-        if (event instanceof net.neoforged.neoforge.event.level.BlockEvent be) {
-            if (be instanceof net.neoforged.neoforge.event.level.BlockEvent.BreakEvent bre) return bre.getPlayer();
-            if (be instanceof net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent epe) {
-                if (epe.getEntity() instanceof Player p) return p;
-            }
-        }
-        return null;
-    }
-
-    private static Level getLevelFromEvent(Event event) {
-        if (event instanceof net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent iepe) return iepe.getPlayer().level();
-        if (event instanceof net.neoforged.neoforge.event.level.LevelEvent le) {
-            if (le.getLevel() instanceof Level l) return l;
-        }
-        if (event instanceof net.neoforged.neoforge.event.level.BlockEvent be) {
-            if (be.getLevel() instanceof Level l) return l;
-        }
-        if (event instanceof net.neoforged.neoforge.event.entity.EntityEvent ee) return ee.getEntity().level();
-        if (event instanceof net.neoforged.neoforge.event.tick.PlayerTickEvent pte) return pte.getEntity().level();
-        if (event instanceof net.neoforged.neoforge.event.entity.player.PlayerEvent pe) return pe.getEntity().level();
-        return null;
-    }
+    // 移除硬编码方法
 }
