@@ -25,7 +25,7 @@ public class BlueprintWorkbenchMenu extends AbstractContainerMenu {
         super(MGMCRegistries.BLUEPRINT_WORKBENCH_MENU.get(), containerId);
         this.container = container;
 
-        // 唯一物品槽位 (左侧放置框)
+        // 唯一物品槽位 (左侧放置框) - 适配 256 宽度的 UI，将其放在左侧
         this.addSlot(new Slot(container, 0, 20, 35) {
             @Override
             public void setChanged() {
@@ -33,17 +33,20 @@ public class BlueprintWorkbenchMenu extends AbstractContainerMenu {
                 BlueprintWorkbenchMenu.this.slotsChanged(container);
             }
         });
+        
+        // 玩家背包 - 适配 256 宽度的 UI，居中显示 (offset = (256-176)/2 = 40)
+        int xOffset = 40;
+        int yOffset = 140; // 将背包往下移，给蓝图列表留出空间
 
-        // 玩家背包
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
-                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8, 84 + i * 18));
+                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, xOffset + 8 + j * 18, yOffset + i * 18));
             }
         }
 
         // 玩家快捷栏
         for (int k = 0; k < 9; ++k) {
-            this.addSlot(new Slot(playerInventory, k, 8, 142));
+            this.addSlot(new Slot(playerInventory, k, xOffset + 8 + k * 18, yOffset + 58));
         }
     }
 
