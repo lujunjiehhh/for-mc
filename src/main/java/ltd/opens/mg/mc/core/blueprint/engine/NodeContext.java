@@ -26,6 +26,7 @@ public class NodeContext {
     public final Entity triggerExtraEntity;
     public final Map<String, JsonObject> nodesMap;
     public final int formatVersion;
+    public final Map<String, Object> properties;
     public final Map<String, Object> variables = new HashMap<>();
     public final Map<String, Map<String, Object>> runtimeData = new HashMap<>();
     public boolean breakRequested = false;
@@ -45,7 +46,7 @@ public class NodeContext {
     public NodeContext(Level level, String eventName, String[] args, String triggerUuid, String triggerName, Entity triggerEntity,
                        double triggerX, double triggerY, double triggerZ, double triggerSpeed,
                        String triggerBlockId, String triggerItemId, double triggerValue, String triggerExtraUuid, Entity triggerExtraEntity,
-                       Map<String, JsonObject> nodesMap, int formatVersion) {
+                       Map<String, JsonObject> nodesMap, int formatVersion, Map<String, Object> properties) {
         this.level = level;
         this.eventName = eventName;
         this.args = args;
@@ -64,6 +65,15 @@ public class NodeContext {
         this.triggerExtraEntity = triggerExtraEntity;
         this.nodesMap = nodesMap;
         this.formatVersion = formatVersion;
+        this.properties = properties != null ? properties : new HashMap<>();
+    }
+
+    public NodeContext(Level level, String eventName, String[] args, String triggerUuid, String triggerName, Entity triggerEntity,
+                       double triggerX, double triggerY, double triggerZ, double triggerSpeed,
+                       String triggerBlockId, String triggerItemId, double triggerValue, String triggerExtraUuid, Entity triggerExtraEntity,
+                       Map<String, JsonObject> nodesMap, int formatVersion) {
+        this(level, eventName, args, triggerUuid, triggerName, triggerEntity, triggerX, triggerY, triggerZ, triggerSpeed,
+             triggerBlockId, triggerItemId, triggerValue, triggerExtraUuid, triggerExtraEntity, nodesMap, formatVersion, new HashMap<>());
     }
 
     public static class Builder {
@@ -84,6 +94,7 @@ public class NodeContext {
         private Entity triggerExtraEntity;
         private Map<String, JsonObject> nodesMap = new HashMap<>();
         private int formatVersion = 1;
+        private final Map<String, Object> properties = new HashMap<>();
 
         public Builder(Level level) {
             this.level = level;
@@ -106,11 +117,16 @@ public class NodeContext {
         public Builder nodesMap(Map<String, JsonObject> nodesMap) { this.nodesMap = nodesMap; return this; }
         public Builder formatVersion(int formatVersion) { this.formatVersion = formatVersion; return this; }
 
+        public Builder addProperty(String key, Object value) {
+            this.properties.put(key, value);
+            return this;
+        }
+
         public NodeContext build() {
             return new NodeContext(level, eventName, args, triggerUuid, triggerName, triggerEntity,
-                                   triggerX, triggerY, triggerZ, triggerSpeed,
-                                   triggerBlockId, triggerItemId, triggerValue, triggerExtraUuid, triggerExtraEntity,
-                                   nodesMap, formatVersion);
+                    triggerX, triggerY, triggerZ, triggerSpeed,
+                    triggerBlockId, triggerItemId, triggerValue, triggerExtraUuid, triggerExtraEntity,
+                    nodesMap, formatVersion, properties);
         }
     }
 }
