@@ -77,6 +77,13 @@ public class NetworkService {
     }
 
     /**
+     * 发送蓝图工作台动作
+     */
+    public void sendWorkbenchAction(WorkbenchActionPayload.Action action, String path) {
+        sendPacket(new WorkbenchActionPayload(action, path));
+    }
+
+    /**
      * 统一发送自定义载荷数据包
      */
     private void sendPacket(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {

@@ -37,10 +37,12 @@ public class MaingraphforMC {
     public MaingraphforMC(IEventBus modEventBus, ModContainer modContainer) {
         this.modEventBus = modEventBus;
         
+        ltd.opens.mg.mc.core.registry.MGMCRegistries.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ltd.opens.mg.mc.network.MGMCNetwork::register);
-
+        
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(ltd.opens.mg.mc.core.blueprint.engine.TickScheduler.class);
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             clientRouter = new BlueprintRouter();
@@ -87,6 +89,85 @@ public class MaingraphforMC {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("mgmc")
+            .then(Commands.literal("workbench")
+                .executes(context -> {
+                    if (context.getSource().getPlayer() != null) {
+                        net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+                        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (id, inv, p) -> new ltd.opens.mg.mc.core.blueprint.inventory.BlueprintWorkbenchMenu(id, inv),
+                            Component.translatable("gui.mgmc.workbench.title")
+                        ));
+                    }
+                    return 1;
+                })
+            )
+            .then(Commands.literal("bind")
+                .then(Commands.argument("blueprint", StringArgumentType.string())
+                    .executes(context -> {
+                        if (context.getSource().getPlayer() != null) {
+                            net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+                            net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                            if (stack.isEmpty()) {
+                                context.getSource().sendFailure(Component.translatable("command.mgmc.workbench.no_item"));
+                                return 0;
+                            }
+                            String path = StringArgumentType.getString(context, "blueprint");
+                            java.util.List<String> scripts = new java.util.ArrayList<>(stack.getOrDefault(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), java.util.Collections.emptyList()));
+                            if (!scripts.contains(path)) {
+                                scripts.add(path);
+                                stack.set(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), scripts);
+                                context.getSource().sendSuccess(() -> Component.translatable("command.mgmc.workbench.bind.success", path), true);
+                            } else {
+                                context.getSource().sendFailure(Component.translatable("command.mgmc.workbench.already_bound"));
+                            }
+                        }
+                        return 1;
+                    })
+                )
+            )
+            .then(Commands.literal("unbind")
+                .then(Commands.argument("blueprint", StringArgumentType.string())
+                    .executes(context -> {
+                        if (context.getSource().getPlayer() != null) {
+                            net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+                            net.minecraft.world.item.ItemStack stack = player.getMainHandItem();
+                            if (stack.isEmpty()) return 0;
+                            String path = StringArgumentType.getString(context, "blueprint");
+                            java.util.List<String> scripts = new java.util.ArrayList<>(stack.getOrDefault(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), java.util.Collections.emptyList()));
+                            if (scripts.remove(path)) {
+                                if (scripts.isEmpty()) {
+                                    stack.remove(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get());
+                                } else {
+                                    stack.set(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), scripts);
+                                }
+                                context.getSource().sendSuccess(() -> Component.translatable("command.mgmc.workbench.unbind.success", path), true);
+                            }
+                        }
+                        return 1;
+                    })
+                )
+            )
+            .then(Commands.literal("list")
+                .executes(context -> {
+                    if (serverManager != null) {
+                        ServerLevel level = context.getSource().getLevel();
+                        java.util.Collection<JsonObject> blueprints = serverManager.getAllBlueprints(level);
+                        if (blueprints.isEmpty()) {
+                            context.getSource().sendSuccess(() -> Component.translatable("command.mgmc.list.empty"), false);
+                        } else {
+                            context.getSource().sendSuccess(() -> Component.translatable("command.mgmc.list.header", blueprints.size()), false);
+                            for (JsonObject bp : blueprints) {
+                                String name = bp.has("name") ? bp.get("name").getAsString() : "unnamed";
+                                context.getSource().sendSuccess(() -> Component.translatable("command.mgmc.list.item", name), false);
+                            }
+                        }
+                    }
+                    return 1;
+                })
+            )
+        );
+
         event.getDispatcher().register(Commands.literal("mgrun")
             .requires(s -> true)
             .then(Commands.argument("blueprint", StringArgumentType.word())

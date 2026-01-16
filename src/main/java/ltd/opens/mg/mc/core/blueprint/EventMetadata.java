@@ -11,5 +11,14 @@ import java.util.function.Function;
 public record EventMetadata(
     Class<? extends Event> eventClass,
     BiConsumer<Event, NodeContext.Builder> contextPopulator,
-    Function<Event, String> routingIdExtractor
-) {}
+    Function<Event, String> routingIdExtractor,
+    EventContextProvider<Event> contextProvider
+) {
+    // 兼容旧构造函数
+    @SuppressWarnings("unchecked")
+    public EventMetadata(Class<? extends Event> eventClass, 
+                         BiConsumer<Event, NodeContext.Builder> contextPopulator, 
+                         Function<Event, String> routingIdExtractor) {
+        this(eventClass, contextPopulator, routingIdExtractor, (EventContextProvider<Event>) ContextProviders.getProvider(eventClass));
+    }
+}

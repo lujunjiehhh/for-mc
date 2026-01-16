@@ -2,10 +2,11 @@ package ltd.opens.mg.mc.network;
 
 import com.google.gson.JsonObject;
 import ltd.opens.mg.mc.MaingraphforMC;
-import ltd.opens.mg.mc.client.gui.screens.BlueprintMappingScreen;
 import ltd.opens.mg.mc.client.gui.screens.BlueprintSelectionForMappingScreen;
-import ltd.opens.mg.mc.client.gui.screens.BlueprintScreen;
 import ltd.opens.mg.mc.client.gui.screens.BlueprintSelectionScreen;
+import ltd.opens.mg.mc.client.gui.screens.BlueprintScreen;
+import ltd.opens.mg.mc.client.gui.screens.BlueprintMappingScreen;
+import ltd.opens.mg.mc.client.gui.screens.BlueprintWorkbenchScreen;
 import ltd.opens.mg.mc.network.payloads.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
@@ -137,6 +138,33 @@ public class BlueprintNetworkHandler {
             });
         }
 
+        public static void handleWorkbenchAction(final WorkbenchActionPayload payload, final IPayloadContext context) {
+            context.enqueueWork(() -> {
+                if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof ltd.opens.mg.mc.core.blueprint.inventory.BlueprintWorkbenchMenu menu) {
+                    net.minecraft.world.item.ItemStack stack = menu.getTargetItem();
+                    if (stack.isEmpty()) return;
+
+                    java.util.List<String> scripts = new java.util.ArrayList<>(stack.getOrDefault(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), java.util.Collections.emptyList()));
+                    
+                    if (payload.action() == WorkbenchActionPayload.Action.BIND) {
+                        if (!scripts.contains(payload.blueprintPath())) {
+                            scripts.add(payload.blueprintPath());
+                        }
+                    } else if (payload.action() == WorkbenchActionPayload.Action.UNBIND) {
+                        scripts.remove(payload.blueprintPath());
+                    }
+
+                    if (scripts.isEmpty()) {
+                        stack.remove(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get());
+                    } else {
+                        stack.set(ltd.opens.mg.mc.core.registry.MGMCRegistries.BLUEPRINT_SCRIPTS.get(), scripts);
+                    }
+                    
+                    menu.slotsChanged(null); // 通知槽位刷新
+                }
+            });
+        }
+
         public static void handleRename(final RenameBlueprintPayload payload, final IPayloadContext context) {
             context.enqueueWork(() -> {
                 if (context.player() instanceof ServerPlayer player) {
@@ -175,6 +203,8 @@ public class BlueprintNetworkHandler {
                     selectionScreen.updateListFromServer(payload.blueprints());
                 } else if (Minecraft.getInstance().screen instanceof BlueprintSelectionForMappingScreen mappingSelectionScreen) {
                     mappingSelectionScreen.updateListFromServer(payload.blueprints());
+                } else if (Minecraft.getInstance().screen instanceof BlueprintWorkbenchScreen workbenchScreen) {
+                    workbenchScreen.updateListFromServer(payload.blueprints());
                 }
             });
         }

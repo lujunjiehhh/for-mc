@@ -17,6 +17,10 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.settings.KeyModifier;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import ltd.opens.mg.mc.core.registry.MGMCRegistries;
 import org.lwjgl.glfw.GLFW;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.resources.Identifier;
@@ -40,6 +44,7 @@ public class MaingraphforMCClient {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         modEventBus.addListener(this::onRegisterKeyMappings);
         modEventBus.addListener(this::onClientSetup);
+        modEventBus.addListener(ltd.opens.mg.mc.client.ClientSetup::registerScreens);
         
         // Register for game events (ClientTickEvent, etc.)
         NeoForge.EVENT_BUS.register(this);
@@ -58,6 +63,15 @@ public class MaingraphforMCClient {
                 mc.setScreen(new BlueprintSelectionScreen());
             } else {
                 mc.setScreen(new AboutScreen(null));
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onItemTooltip(ItemTooltipEvent event) {
+        if (event.getEntity() != null && event.getEntity().isCreative()) {
+            if (event.getItemStack().has(MGMCRegistries.BLUEPRINT_SCRIPTS.get())) {
+                event.getToolTip().add(Component.translatable("tooltip.mgmc.item_bound").withStyle(ChatFormatting.GOLD));
             }
         }
     }

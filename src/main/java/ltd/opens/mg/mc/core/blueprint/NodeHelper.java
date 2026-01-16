@@ -182,9 +182,22 @@ public class NodeHelper {
      * @param routingIdExtractor 提取路由 ID 的逻辑（如 blockId, itemId 等）
      * @param valueHandler 节点数据提取逻辑
      */
+    public <T extends net.neoforged.bus.api.Event> void registerEvent(
+            Class<T> eventClass,
+            java.util.function.BiConsumer<T, ltd.opens.mg.mc.core.blueprint.engine.NodeContext.Builder> contextPopulator,
+            java.util.function.Function<T, String> routingIdExtractor,
+            SimpleValueHandler valueHandler) {
+        
+        registerEvent(eventClass, ContextProviders.getProvider(eventClass), contextPopulator, routingIdExtractor, valueHandler);
+    }
+
+    /**
+     * 注册一个带有自定义 ContextProvider 的 Minecraft 事件节点。
+     */
     @SuppressWarnings("unchecked")
     public <T extends net.neoforged.bus.api.Event> void registerEvent(
             Class<T> eventClass,
+            EventContextProvider<T> provider,
             java.util.function.BiConsumer<T, ltd.opens.mg.mc.core.blueprint.engine.NodeContext.Builder> contextPopulator,
             java.util.function.Function<T, String> routingIdExtractor,
             SimpleValueHandler valueHandler) {
@@ -192,7 +205,8 @@ public class NodeHelper {
         EventMetadata metadata = new EventMetadata(
             eventClass,
             (event, builder) -> contextPopulator.accept((T) event, builder),
-            event -> routingIdExtractor.apply((T) event)
+            event -> routingIdExtractor.apply((T) event),
+            (EventContextProvider<net.neoforged.bus.api.Event>) provider
         );
 
         builder.addProperty("event_metadata", metadata);

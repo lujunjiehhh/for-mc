@@ -8,6 +8,7 @@ import ltd.opens.mg.mc.core.blueprint.engine.NodeLogicRegistry;
 import ltd.opens.mg.mc.core.blueprint.engine.TypeConverter;
 import ltd.opens.mg.mc.core.blueprint.NodePorts;
 import ltd.opens.mg.mc.core.blueprint.NodeThemes;
+import ltd.opens.mg.mc.core.blueprint.engine.TickScheduler;
 import ltd.opens.mg.mc.core.blueprint.events.RegisterMGMCNodesEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 
@@ -70,23 +71,23 @@ public class ControlFlowNodes {
                 @Override
                 public void execute(JsonObject node, NodeContext ctx) {
                     if (NodePorts.BREAK.equals(ctx.lastTriggeredPin)) {
-                        ctx.breakRequested = true;
+                        ctx.breakRequested.set(true);
                         return;
                     }
                     int start = TypeConverter.toInt(NodeLogicRegistry.evaluateInput(node, NodePorts.START, ctx));
                     int end = TypeConverter.toInt(NodeLogicRegistry.evaluateInput(node, NodePorts.END, ctx));
-                    boolean previousBreakRequested = ctx.breakRequested;
-                    ctx.breakRequested = false;
+                    boolean previousBreakRequested = ctx.breakRequested.get();
+                    ctx.breakRequested.set(false);
                     String nodeId = node.get("id").getAsString();
                     for (int i = start; i <= end; i++) {
                         ctx.setRuntimeData(nodeId, "index", i);
                         NodeLogicRegistry.triggerExec(node, NodePorts.LOOP_BODY, ctx);
-                        if (ctx.breakRequested) {
-                            ctx.breakRequested = false;
+                        if (ctx.breakRequested.get()) {
+                            ctx.breakRequested.set(false);
                             break;
                         }
                     }
-                    ctx.breakRequested = previousBreakRequested;
+                    ctx.breakRequested.set(previousBreakRequested);
                     NodeLogicRegistry.triggerExec(node, NodePorts.COMPLETED, ctx);
                 }
 
@@ -99,6 +100,39 @@ public class ControlFlowNodes {
                 }
             });
 
+        // 等待刻 (Wait Tick)
+        NodeHelper.setup("wait_tick", "node.mgmc.wait_tick.name")
+            .category("node_category.mgmc.logic.control")
+            .color(NodeThemes.COLOR_NODE_CONTROL)
+            .execIn()
+            .input(NodePorts.TICKS, "node.mgmc.port.ticks", NodeDefinition.PortType.FLOAT, NodeThemes.COLOR_PORT_FLOAT, true, 20)
+            .execOut()
+            .registerExec((node, ctx) -> {
+                int ticks = TypeConverter.toInt(NodeLogicRegistry.evaluateInput(node, NodePorts.TICKS, ctx));
+                if (ticks <= 0) {
+                    NodeLogicRegistry.triggerExec(node, NodePorts.EXEC, ctx);
+                } else {
+                    TickScheduler.schedule(ctx, node, NodePorts.EXEC, ticks);
+                }
+            });
+
+        // 等待秒 (Wait Second)
+        NodeHelper.setup("wait_s", "node.mgmc.wait_s.name")
+            .category("node_category.mgmc.logic.control")
+            .color(NodeThemes.COLOR_NODE_CONTROL)
+            .execIn()
+            .input(NodePorts.SECONDS, "node.mgmc.port.seconds", NodeDefinition.PortType.FLOAT, NodeThemes.COLOR_PORT_FLOAT, true, 1.0)
+            .execOut()
+            .registerExec((node, ctx) -> {
+                double seconds = TypeConverter.toDouble(NodeLogicRegistry.evaluateInput(node, NodePorts.SECONDS, ctx));
+                int ticks = (int) (seconds * 20);
+                if (ticks <= 0) {
+                    NodeLogicRegistry.triggerExec(node, NodePorts.EXEC, ctx);
+                } else {
+                    TickScheduler.schedule(ctx, node, NodePorts.EXEC, ticks);
+                }
+            });
+
         // 中断节点 (Break Loop)
         NodeHelper.setup("break_loop", "node.mgmc.break_loop.name")
             .category("node_category.mgmc.logic.control")
@@ -106,7 +140,7 @@ public class ControlFlowNodes {
             .input(NodePorts.EXEC, "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .output(NodePorts.BREAK, "node.mgmc.break_loop.port.break", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .registerExec((node, ctx) -> {
-                ctx.breakRequested = true;
+                ctx.breakRequested.set(true);
             });
     }
 }
