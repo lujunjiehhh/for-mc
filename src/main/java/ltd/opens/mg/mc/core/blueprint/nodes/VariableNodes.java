@@ -55,7 +55,7 @@ public class VariableNodes {
             .category("node_category.mgmc.variable")
             .color(NodeThemes.COLOR_NODE_VARIABLE)
             .input(NodePorts.NAME, "node.mgmc.port.name", NodeDefinition.PortType.STRING, NodeThemes.COLOR_PORT_STRING, "")
-            .output(NodePorts.VALUE, "node.mgmc.port.value", NodeDefinition.PortType.OBJECT, NodeThemes.COLOR_PORT_ANY)
+            .output(NodePorts.VALUE, "node.mgmc.port.value", NodeDefinition.PortType.ANY, NodeThemes.COLOR_PORT_ANY)
             .registerValue((node, portId, ctx) -> {
                 String name = TypeConverter.toString(NodeLogicRegistry.evaluateInput(node, NodePorts.NAME, ctx));
                 if (name == null || name.trim().isEmpty()) return null;
@@ -68,8 +68,8 @@ public class VariableNodes {
             .execIn()
             .execOut()
             .input(NodePorts.NAME, "node.mgmc.port.name", NodeDefinition.PortType.STRING, NodeThemes.COLOR_PORT_STRING, "")
-            .input(NodePorts.VALUE, "node.mgmc.port.value", NodeDefinition.PortType.OBJECT, NodeThemes.COLOR_PORT_ANY)
-            .output(NodePorts.VALUE, "node.mgmc.port.value", NodeDefinition.PortType.OBJECT, NodeThemes.COLOR_PORT_ANY)
+            .input(NodePorts.VALUE, "node.mgmc.port.value", NodeDefinition.PortType.ANY, NodeThemes.COLOR_PORT_ANY)
+            .output(NodePorts.VALUE, "node.mgmc.port.value", NodeDefinition.PortType.ANY, NodeThemes.COLOR_PORT_ANY)
             .register(new NodeHelper.NodeHandlerAdapter() {
                 @Override
                 public void execute(JsonObject node, NodeContext ctx) {
