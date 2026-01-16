@@ -27,8 +27,7 @@ public class BlueprintWorkbenchScreen extends AbstractContainerScreen<BlueprintW
     public BlueprintWorkbenchScreen(BlueprintWorkbenchMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 256;
-        this.imageHeight = 224;
-        this.inventoryLabelY = 130; // 对应 Menu 中的 yOffset - 10
+        this.imageHeight = 150; // 缩小高度，不再需要背包空间
         this.titleLabelX = 8;
         this.titleLabelY = 6;
     }
@@ -38,7 +37,7 @@ public class BlueprintWorkbenchScreen extends AbstractContainerScreen<BlueprintW
         super.init();
         
         int listWidth = 85;
-        int listHeight = 90; // 稍微调短一点
+        int listHeight = 90;
         int listY = this.topPos + 35;
 
         this.boundBlueprintsList = new BoundBlueprintList(this.minecraft, listWidth, listHeight, listY, 20);
@@ -110,39 +109,37 @@ public class BlueprintWorkbenchScreen extends AbstractContainerScreen<BlueprintW
         int x = this.leftPos;
         int y = this.topPos;
         
-        // 1. 绘制原版风格的基础背景 (浅灰色)
+        // 1. 绘制主体面板
         graphics.fill(x, y, x + this.imageWidth, y + this.imageHeight, 0xFFC6C6C6);
-        
-        // 2. 绘制 3D 边框
-        graphics.fill(x, y, x + this.imageWidth, y + 1, 0xFFFFFFFF); // 顶部高亮
-        graphics.fill(x, y, x + 1, y + this.imageHeight, 0xFFFFFFFF); // 左侧高亮
-        graphics.fill(x + this.imageWidth - 1, y, x + this.imageWidth, y + this.imageHeight, 0xFF555555); // 右侧阴影
-        graphics.fill(x, y + this.imageHeight - 1, x + this.imageWidth, y + this.imageHeight, 0xFF555555); // 底部阴影
+        graphics.fill(x, y, x + this.imageWidth, y + 1, 0xFFFFFFFF); // 顶白
+        graphics.fill(x, y, x + 1, y + this.imageHeight, 0xFFFFFFFF); // 左白
+        graphics.fill(x + this.imageWidth - 1, y, x + this.imageWidth, y + this.imageHeight, 0xFF555555); // 右黑
+        graphics.fill(x, y + this.imageHeight - 1, x + this.imageWidth, y + this.imageHeight, 0xFF555555); // 底黑
 
-        // 3. 绘制单个物品槽位 (Menu 中位置是 20, 35)
+        // 2. 绘制手持物品展示框 (左侧)
         int slotX = x + 20;
         int slotY = y + 35;
-        // 使用原版凹陷槽位风格
-        graphics.fill(slotX - 1, slotY - 1, slotX + 19, slotY + 19, 0xFF373737); // 左上深色
-        graphics.fill(slotX, slotY, slotX + 19, slotY + 19, 0xFFFFFFFF); // 右下白色
-        graphics.fill(slotX, slotY, slotX + 18, slotY + 18, 0xFF8B8B8B); // 内部灰色
+        // 绘制槽位背景
+        graphics.fill(slotX - 1, slotY - 1, slotX + 19, slotY + 19, 0xFF373737);
+        graphics.fill(slotX, slotY, slotX + 19, slotY + 19, 0xFFFFFFFF);
+        graphics.fill(slotX, slotY, slotX + 18, slotY + 18, 0xFF8B8B8B);
         
-        // 4. 绘制蓝图列表背景面板
+        // 渲染当前手持的物品图标
+        ItemStack heldItem = this.menu.getTargetItem();
+        if (!heldItem.isEmpty()) {
+            graphics.renderFakeItem(heldItem, slotX + 1, slotY + 1);
+            graphics.renderItemDecorations(this.font, heldItem, slotX + 1, slotY + 1);
+        } else {
+            // 如果手空，画个淡淡的提示
+            graphics.drawString(this.font, Component.literal("空"), slotX + 4, slotY + 5, 0x888888, false);
+        }
+        
+        graphics.drawString(this.font, Component.literal("手持物品"), x + 10, y + 22, 0x404040, false);
+
+        // 3. 绘制蓝图列表
         renderPanel(graphics, x + 55, y + 35, 85, 90, "已绑定蓝图");
         renderPanel(graphics, x + 160, y + 35, 85, 90, "蓝图库");
-        
-        // 5. 绘制背包贴图 (对齐槽位)
-        // Menu 中背包槽位于 (48, 140)
-        // inventory.png 中背包槽位位于 (7, 83)
-        // 贴图渲染位置 = (x + 48 - 7, y + 140 - 83) = (x + 41, y + 57)
-        // 但我们只需要下半部分，从 V=82 开始截取 (包含 "Inventory" 文字)
-        int invTexX = x + 41;
-        int invTexY = y + 132; // 对应 Menu 的 140，向上偏 8 像素显示文字
-        
-        // blit(texture, x, y, width, height, uOffset, vOffset, uWidth, vHeight)
-        graphics.blit(INVENTORY_TEXTURE, invTexX, invTexY, 176, 90, 0f, 82f, 176f, 90f);
 
-        // 6. 绘制标题
         graphics.drawString(this.font, this.title, x + 8, y + 8, 0x404040, false);
     }
 
