@@ -127,18 +127,18 @@ public class BlueprintWorkbenchScreen extends AbstractContainerScreen<BlueprintW
         // 渲染当前手持的物品图标
         ItemStack heldItem = this.menu.getTargetItem();
         if (!heldItem.isEmpty()) {
-            graphics.renderFakeItem(heldItem, slotX + 1, slotY + 1);
-            graphics.renderItemDecorations(this.font, heldItem, slotX + 1, slotY + 1);
-        } else {
-            // 如果手空，画个淡淡的提示 (增加不透明度)
-            graphics.drawString(this.font, Component.literal("空"), slotX + 4, slotY + 5, 0xFF888888, false);
-        }
-        
-        graphics.drawString(this.font, Component.literal("手持物品"), x + 10, y + 22, 0xFF404040, false);
+                graphics.renderFakeItem(heldItem, slotX + 1, slotY + 1);
+                graphics.renderItemDecorations(this.font, heldItem, slotX + 1, slotY + 1);
+            } else {
+                // 如果手空，画个淡淡的提示
+                graphics.drawString(this.font, Component.translatable("gui.mgmc.workbench.empty"), slotX + 4, slotY + 5, 0xFF888888, false);
+            }
+            
+            graphics.drawString(this.font, Component.translatable("gui.mgmc.workbench.held_item"), x + 10, y + 22, 0xFF404040, false);
 
-        // 3. 绘制蓝图列表
-        renderPanel(graphics, x + 55, y + 35, 85, 90, "已绑定蓝图");
-        renderPanel(graphics, x + 160, y + 35, 85, 90, "蓝图库");
+            // 3. 绘制蓝图列表
+            renderPanel(graphics, x + 55, y + 35, 85, 90, Component.translatable("gui.mgmc.workbench.bound_blueprints").getString());
+            renderPanel(graphics, x + 160, y + 35, 85, 90, Component.translatable("gui.mgmc.workbench.blueprint_library").getString());
 
         graphics.drawString(this.font, this.title, x + 8, y + 8, 0xFF404040, false);
     }

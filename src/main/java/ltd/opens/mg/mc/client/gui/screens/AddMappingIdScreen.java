@@ -43,7 +43,7 @@ public class AddMappingIdScreen extends Screen {
         int centerX = this.width / 2;
         int centerY = this.height / 2;
 
-        this.searchBox = new EditBox(this.font, centerX - 150, centerY - 100, 300, 20, Component.literal("Search"));
+        this.searchBox = new EditBox(this.font, centerX - 150, centerY - 100, 300, 20, Component.translatable("gui.mgmc.mapping.id_hint"));
         this.searchBox.setHint(Component.translatable("gui.mgmc.mapping.id_hint"));
         this.searchBox.setResponder(this::onSearchChanged);
         this.addRenderableWidget(this.searchBox);
