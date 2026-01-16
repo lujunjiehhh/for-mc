@@ -9,7 +9,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import ltd.opens.mg.mc.core.blueprint.inventory.BlueprintWorkbenchMenu;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
 import com.mojang.serialization.Codec;
 
 import java.util.List;

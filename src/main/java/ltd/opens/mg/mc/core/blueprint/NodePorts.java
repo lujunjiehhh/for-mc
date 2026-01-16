@@ -85,6 +85,7 @@ public class NodePorts {
     public static final String AMPLIFIER = "amplifier";
     public static final String SHOW_PARTICLES = "show_particles";
     public static final String SECONDS = "seconds";
+    public static final String TICKS = "ticks";
     public static final String VELOCITY = "velocity";
     
     // 实体属性

@@ -2,7 +2,6 @@ package ltd.opens.mg.mc.client.gui.blueprint.manager;
 
 import ltd.opens.mg.mc.client.gui.blueprint.BlueprintState;
 import ltd.opens.mg.mc.client.gui.blueprint.io.BlueprintIO;
-import ltd.opens.mg.mc.client.gui.components.GuiConnection;
 import ltd.opens.mg.mc.client.gui.components.GuiNode;
 import net.minecraft.network.chat.Component;
 

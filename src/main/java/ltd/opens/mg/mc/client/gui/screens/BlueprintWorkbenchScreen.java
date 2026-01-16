@@ -13,13 +13,10 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
 public class BlueprintWorkbenchScreen extends AbstractContainerScreen<BlueprintWorkbenchMenu> {
-    private static final Identifier SLOT_SPRITE = Identifier.parse("minecraft:container/slot");
-    private static final Identifier INVENTORY_TEXTURE = Identifier.parse("minecraft:textures/gui/container/inventory.png");
     
     private BlueprintList allBlueprintsList;
     private BoundBlueprintList boundBlueprintsList;

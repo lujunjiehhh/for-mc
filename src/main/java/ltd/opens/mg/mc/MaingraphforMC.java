@@ -40,8 +40,9 @@ public class MaingraphforMC {
         ltd.opens.mg.mc.core.registry.MGMCRegistries.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ltd.opens.mg.mc.network.MGMCNetwork::register);
-
+        
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(ltd.opens.mg.mc.core.blueprint.engine.TickScheduler.class);
 
         if (FMLEnvironment.getDist() == Dist.CLIENT) {
             clientRouter = new BlueprintRouter();
