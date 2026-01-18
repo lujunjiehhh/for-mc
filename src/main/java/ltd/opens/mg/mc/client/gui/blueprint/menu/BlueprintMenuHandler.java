@@ -73,8 +73,8 @@ public class BlueprintMenuHandler {
 
     private void createNodeAtMenu(NodeDefinition def) {
         state.pushHistory();
-        float worldX = (float) ((state.menuX - state.panX) / state.zoom);
-        float worldY = (float) ((state.menuY - state.panY) / state.zoom);
+        float worldX = state.viewport.toWorldX(state.menuX);
+        float worldY = state.viewport.toWorldY(state.menuY);
         GuiNode node = new GuiNode(def, worldX, worldY);
         state.nodes.add(node);
         state.markDirty();
@@ -114,8 +114,8 @@ public class BlueprintMenuHandler {
 
     public boolean mouseReleased(double mouseX, double mouseY, int button, int screenWidth, int screenHeight) {
         if (button == 1) { // Right click
-            double worldMouseX = (mouseX - state.panX) / state.zoom;
-            double worldMouseY = (mouseY - state.panY) / state.zoom;
+            double worldMouseX = state.viewport.toWorldX(mouseX);
+            double worldMouseY = state.viewport.toWorldY(mouseY);
             
             for (int i = state.nodes.size() - 1; i >= 0; i--) {
                 GuiNode node = state.nodes.get(i);

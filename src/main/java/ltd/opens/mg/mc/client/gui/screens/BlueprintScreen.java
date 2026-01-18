@@ -41,7 +41,7 @@ public class BlueprintScreen extends Screen {
         }
 
         if (forceOpen) {
-            state.zoom = 0.5f; // "缩小" effect
+            state.viewport.zoom = 0.5f; // "缩小" effect
         }
 
         // Request data from server (works for both local and remote servers)
@@ -103,32 +103,27 @@ public class BlueprintScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        BlueprintRenderer.drawGrid(guiGraphics, this.width, this.height, state.panX, state.panY, state.zoom);
+        BlueprintRenderer.drawGrid(guiGraphics, this.width, this.height, state.viewport);
 
         guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().translate(state.panX, state.panY);
-        guiGraphics.pose().scale(state.zoom, state.zoom);
+        guiGraphics.pose().translate(state.viewport.panX, state.viewport.panY);
+        guiGraphics.pose().scale(state.viewport.zoom, state.viewport.zoom);
 
-        BlueprintRenderer.drawConnections(guiGraphics, state.connections, this.width, this.height, state.panX, state.panY, state.zoom);
+        BlueprintRenderer.drawConnections(guiGraphics, state.connections, this.width, this.height, state.viewport);
 
         for (GuiNode node : state.nodes) {
-            float sX = node.x * state.zoom + state.panX;
-            float sY = node.y * state.zoom + state.panY;
-            float sW = node.width * state.zoom;
-            float sH = node.height * state.zoom;
-            
-            if (sX + sW < 0 || sX > this.width || sY + sH < 0 || sY > this.height) {
+            if (!state.viewport.isVisible(node.x, node.y, node.width, node.height, this.width, this.height)) {
                 continue;
             }
             
             node.updateConnectedState(state.connections);
             int hTimer = (state.highlightedNode == node) ? state.highlightTimer : 0;
-            node.render(guiGraphics, this.font, mouseX, mouseY, state.panX, state.panY, state.zoom, state.connections, state.focusedNode, state.focusedPort, state.editingMarkerNode == node, hTimer);
+            node.render(guiGraphics, this.font, mouseX, mouseY, state.viewport, state.connections, state.focusedNode, state.focusedPort, state.editingMarkerNode == node, hTimer);
         }
 
         if (state.connectionStartNode != null) {
             float[] startPos = state.connectionStartNode.getPortPositionByName(state.connectionStartPort, state.isConnectionFromInput);
-            BlueprintRenderer.drawBezier(guiGraphics, startPos[0], startPos[1], (float) ((mouseX - state.panX) / state.zoom), (float) ((mouseY - state.panY) / state.zoom), 0x88FFFFFF, state.zoom);
+            BlueprintRenderer.drawBezier(guiGraphics, startPos[0], startPos[1], state.viewport.toWorldX(mouseX), state.viewport.toWorldY(mouseY), 0x88FFFFFF, state.viewport.zoom);
         }
 
         guiGraphics.pose().popMatrix();

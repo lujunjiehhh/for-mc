@@ -9,9 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BlueprintState {
-    public float panX = 0;
-    public float panY = 0;
-    public float zoom = 1.0f;
+    public final Viewport viewport = new Viewport();
+    
+    // UI State
+    public GuiNode focusedNode;
     public boolean isAnimatingView = false;
 
     public final List<GuiNode> nodes = new ArrayList<>();
@@ -46,9 +47,8 @@ public class BlueprintState {
     public double menuX, menuY;
     public boolean showNodeContextMenu = false;
     public GuiNode contextMenuNode = null;
-    public final BlueprintMenu menu = new BlueprintMenu();
-
-    public GuiNode focusedNode = null;
+    public BlueprintMenu menu = new BlueprintMenu();
+    
     public String focusedPort = null;
     public int cursorTick = 0;
     public boolean isDirty = false;
@@ -102,14 +102,6 @@ public class BlueprintState {
             searchHistory.remove(searchHistory.size() - 1);
         }
     }
-
-    // View state delegates
-    public float getTargetPanX() { return viewManager.targetPanX; }
-    public float getTargetPanY() { return viewManager.targetPanY; }
-    public float getTargetZoom() { return viewManager.targetZoom; }
-    public void setTargetPanX(float v) { viewManager.targetPanX = v; }
-    public void setTargetPanY(float v) { viewManager.targetPanY = v; }
-    public void setTargetZoom(float v) { viewManager.targetZoom = v; }
 
     public void tick(int screenWidth, int screenHeight) {
         cursorTick++;
@@ -189,8 +181,6 @@ public class BlueprintState {
     }
 
     public void resetView() {
-        panX = 0;
-        panY = 0;
-        zoom = 1.0f;
+        viewManager.resetView();
     }
 }
