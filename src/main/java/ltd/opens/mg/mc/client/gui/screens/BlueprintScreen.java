@@ -30,7 +30,7 @@ public class BlueprintScreen extends Screen {
     }
 
     public BlueprintScreen(Screen parent, String name, boolean forceOpen) {
-        super(Component.translatable("gui.mgmc.blueprint_editor.title", name));
+        super(Component.translatable("gui.mgmc.blueprint_editor.title", name.endsWith(".json") ? name.substring(0, name.length() - 5) : name));
         this.parent = parent;
         this.blueprintName = name.endsWith(".json") ? name : name + ".json";
         this.eventHandler = new BlueprintEventHandler(state);

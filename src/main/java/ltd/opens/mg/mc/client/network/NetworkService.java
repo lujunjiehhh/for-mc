@@ -35,7 +35,28 @@ public class NetworkService {
     }
 
     /**
-     * 请求 ID 映射
+     * 删除蓝图
+     */
+    public void deleteBlueprint(String name) {
+        sendPacket(new DeleteBlueprintPayload(name));
+    }
+
+    /**
+     * 重命名蓝图
+     */
+    public void renameBlueprint(String oldName, String newName) {
+        sendPacket(new RenameBlueprintPayload(oldName, newName));
+    }
+
+    /**
+     * 复制蓝图
+     */
+    public void duplicateBlueprint(String sourceName, String targetName) {
+        sendPacket(new DuplicateBlueprintPayload(sourceName, targetName));
+    }
+
+    /**
+     * 请求蓝图具体数据
      */
     public void requestMappings() {
         sendPacket(new RequestMappingsPayload());

@@ -172,15 +172,7 @@ public class BlueprintManager {
                 obj.addProperty("_version", newVersion);
                 obj.addProperty("format_version", 5);
                 
-                // Ensure name property exists and matches filename (without extension)
-                if (!obj.has("name")) {
-                    String displayName = name;
-                    if (displayName.endsWith(".json")) {
-                        displayName = displayName.substring(0, displayName.length() - 5);
-                    }
-                    obj.addProperty("name", displayName);
-                }
-                
+                // 移除对 "name" 字段的写入，现在以前台显示的文件名为准
                 Files.writeString(dataFile, obj.toString());
                 
                 blueprintCache.put(fileName, new CachedBlueprint(obj, System.currentTimeMillis(), newVersion));
@@ -192,6 +184,94 @@ public class BlueprintManager {
             } catch (Exception e) {
                 return new SaveResult(false, "Save failed: " + e.getMessage(), -1);
             }
+        }, IO_EXECUTOR);
+    }
+
+    public CompletableFuture<Boolean> deleteBlueprintAsync(ServerLevel level, String name) {
+        if (!isValidFileName(name)) return CompletableFuture.completedFuture(false);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String fileName = name.endsWith(".json") ? name : name + ".json";
+                Path dataFile = getBlueprintsDir(level).resolve(fileName);
+                if (Files.exists(dataFile)) {
+                    Files.delete(dataFile);
+                    blueprintCache.remove(fileName);
+                    synchronized (allBlueprintsCache) {
+                        lastAllBlueprintsRefresh = 0;
+                    }
+                    return true;
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to delete blueprint: " + name, e);
+            }
+            return false;
+        }, IO_EXECUTOR);
+    }
+
+    public CompletableFuture<Boolean> renameBlueprintAsync(ServerLevel level, String oldName, String newName) {
+        if (!isValidFileName(oldName) || !isValidFileName(newName)) return CompletableFuture.completedFuture(false);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String oldFileName = oldName.endsWith(".json") ? oldName : oldName + ".json";
+                String newFileName = newName.endsWith(".json") ? newName : newName + ".json";
+                Path oldPath = getBlueprintsDir(level).resolve(oldFileName);
+                Path newPath = getBlueprintsDir(level).resolve(newFileName);
+
+                if (Files.exists(oldPath) && !Files.exists(newPath)) {
+                    // Load, update name property, and save to new location
+                    JsonObject bp = getBlueprint(level, oldName);
+                    if (bp != null) {
+                        // 移除对 "name" 字段的写入，现在以前台显示的文件名为准
+                        Files.writeString(newPath, bp.toString());
+                        Files.delete(oldPath);
+                        
+                        blueprintCache.remove(oldFileName);
+                        blueprintCache.put(newFileName, new CachedBlueprint(bp, System.currentTimeMillis(), getBlueprintVersion(level, oldName)));
+                        
+                        synchronized (allBlueprintsCache) {
+                            lastAllBlueprintsRefresh = 0;
+                        }
+                        return true;
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to rename blueprint: " + oldName + " to " + newName, e);
+            }
+            return false;
+        }, IO_EXECUTOR);
+    }
+
+    public CompletableFuture<Boolean> duplicateBlueprintAsync(ServerLevel level, String sourceName, String targetName) {
+        if (!isValidFileName(sourceName) || !isValidFileName(targetName)) return CompletableFuture.completedFuture(false);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String sourceFileName = sourceName.endsWith(".json") ? sourceName : sourceName + ".json";
+                String targetFileName = targetName.endsWith(".json") ? targetName : targetName + ".json";
+                Path sourcePath = getBlueprintsDir(level).resolve(sourceFileName);
+                Path targetPath = getBlueprintsDir(level).resolve(targetFileName);
+
+                if (Files.exists(sourcePath) && !Files.exists(targetPath)) {
+                    JsonObject bp = getBlueprint(level, sourceName);
+                    if (bp != null) {
+                        // Create a deep copy to avoid modifying the original in cache
+                        JsonObject copy = JsonParser.parseString(bp.toString()).getAsJsonObject();
+                        // 移除对 "name" 字段的写入，现在以前台显示的文件名为准
+                        copy.addProperty("_version", 1L); // Reset version for new file
+                        
+                        Files.writeString(targetPath, copy.toString());
+                        
+                        blueprintCache.put(targetFileName, new CachedBlueprint(copy, System.currentTimeMillis(), 1L));
+                        
+                        synchronized (allBlueprintsCache) {
+                            lastAllBlueprintsRefresh = 0;
+                        }
+                        return true;
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to duplicate blueprint: " + sourceName + " to " + targetName, e);
+            }
+            return false;
         }, IO_EXECUTOR);
     }
 

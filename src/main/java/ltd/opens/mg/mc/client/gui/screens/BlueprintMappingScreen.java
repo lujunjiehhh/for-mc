@@ -297,9 +297,11 @@ public class BlueprintMappingScreen extends Screen {
 
     class BlueprintMappingEntry extends ObjectSelectionList.Entry<BlueprintMappingEntry> {
         private final String blueprintPath;
+        private final String displayName;
 
         public BlueprintMappingEntry(String path) {
             this.blueprintPath = path;
+            this.displayName = path.endsWith(".json") ? path.substring(0, path.length() - 5) : path;
         }
 
         @Override
@@ -317,7 +319,7 @@ public class BlueprintMappingScreen extends Screen {
             }
 
             int color = isHovered ? 0xFFFFFFFF : 0xFFAAAAAA;
-            guiGraphics.drawString(font, blueprintPath, left + 5, y + (height - 8) / 2, color);
+            guiGraphics.drawString(font, displayName, left + 5, y + (height - 8) / 2, color);
             
             // 删除按钮 (X)
             int xBtnWidth = 20;
@@ -365,7 +367,7 @@ public class BlueprintMappingScreen extends Screen {
 
         @Override
         public Component getNarration() {
-            return Component.literal(blueprintPath);
+            return Component.literal(displayName);
         }
     }
 }

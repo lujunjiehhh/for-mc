@@ -1,6 +1,8 @@
 package ltd.opens.mg.mc.client.gui.screens;
 
+import ltd.opens.mg.mc.client.gui.components.GuiContextMenu;
 import ltd.opens.mg.mc.client.network.NetworkService;
+import ltd.opens.mg.mc.client.gui.screens.InputModalScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -19,6 +21,7 @@ public class BlueprintSelectionScreen extends Screen {
     private EditBox newBlueprintName;
     private Button openButton;
     private Button createButton;
+    private final GuiContextMenu contextMenu = new GuiContextMenu();
 
     public BlueprintSelectionScreen() {
         super(Component.translatable("gui.mgmc.blueprint_selection.title"));
@@ -130,10 +133,15 @@ public class BlueprintSelectionScreen extends Screen {
         if (this.list != null && this.list.children().isEmpty()) {
             guiGraphics.drawCenteredString(this.font, Component.translatable("gui.mgmc.blueprint_selection.no_blueprints"), this.width / 2, this.height / 2 - 10, 0xAAAAAA);
         }
+
+        contextMenu.render(guiGraphics, this.font, mouseX, mouseY, this.width, this.height);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDouble) {
+        if (contextMenu.mouseClicked(event.x(), event.y(), event.buttonInfo().button())) {
+            return true;
+        }
         return super.mouseClicked(event, isDouble);
     }
 
@@ -214,6 +222,70 @@ public class BlueprintSelectionScreen extends Screen {
         public boolean mouseClicked(MouseButtonEvent event, boolean isDouble) {
             BlueprintSelectionScreen.this.list.setSelected(this);
             
+            if (event.buttonInfo().button() == 1) { // Right click
+                List<GuiContextMenu.MenuItem> menuItems = new ArrayList<>();
+                
+                menuItems.add(new GuiContextMenu.MenuItem(Component.translatable("gui.mgmc.blueprint_selection.open"), () -> {
+                    BlueprintSelectionScreen.this.setFocused(null);
+                    Minecraft.getInstance().setScreen(new BlueprintScreen(BlueprintSelectionScreen.this, this.fullName));
+                }));
+
+                menuItems.add(new GuiContextMenu.MenuItem(Component.translatable("gui.mgmc.blueprint_selection.rename"), () -> {
+                    Minecraft.getInstance().setScreen(new InputModalScreen(
+                        BlueprintSelectionScreen.this,
+                        Component.translatable("gui.mgmc.blueprint_selection.rename").getString(),
+                        this.displayName,
+                        false,
+                        newName -> {
+                            if (!newName.isEmpty() && !newName.equals(this.displayName)) {
+                                String finalNewName = newName.endsWith(".json") ? newName : newName + ".json";
+                                NetworkService.getInstance().renameBlueprint(this.fullName, finalNewName);
+                                BlueprintSelectionScreen.this.refreshFileList();
+                            }
+                        }
+                    ));
+                }));
+
+                menuItems.add(new GuiContextMenu.MenuItem(Component.translatable("gui.mgmc.blueprint_selection.duplicate"), () -> {
+                    Minecraft.getInstance().setScreen(new InputModalScreen(
+                        BlueprintSelectionScreen.this,
+                        Component.translatable("gui.mgmc.blueprint_selection.duplicate").getString(),
+                        this.displayName + "_copy",
+                        false,
+                        newName -> {
+                            if (!newName.isEmpty()) {
+                                String finalNewName = newName.endsWith(".json") ? newName : newName + ".json";
+                                NetworkService.getInstance().duplicateBlueprint(this.fullName, finalNewName);
+                                BlueprintSelectionScreen.this.refreshFileList();
+                            }
+                        }
+                    ));
+                }));
+
+                menuItems.add(new GuiContextMenu.MenuItem(Component.translatable("gui.mgmc.blueprint_selection.delete"), () -> {
+                    Minecraft.getInstance().setScreen(new InputModalScreen(
+                        BlueprintSelectionScreen.this,
+                        Component.translatable("gui.mgmc.blueprint_selection.delete").getString() + ": " + this.displayName,
+                        "",
+                        false,
+                        new String[]{
+                            Component.translatable("gui.mgmc.modal.confirm").getString(),
+                            Component.translatable("gui.mgmc.modal.cancel").getString()
+                        },
+                        InputModalScreen.Mode.SELECTION,
+                        choice -> {
+                            if (choice.equals(Component.translatable("gui.mgmc.modal.confirm").getString())) {
+                                NetworkService.getInstance().deleteBlueprint(this.fullName);
+                                BlueprintSelectionScreen.this.refreshFileList();
+                            }
+                        }
+                    ));
+                }, 0xFFFF5555));
+
+                BlueprintSelectionScreen.this.contextMenu.show(event.x(), event.y(), menuItems);
+                return true;
+            }
+
             long now = System.currentTimeMillis();
             if (now - lastClickTime < 250L) {
                 // Double click
