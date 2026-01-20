@@ -32,6 +32,9 @@ public class BlueprintMenu {
     private NodeDefinition.PortType filterType = null;
     private boolean lookingForInput = false;
 
+    private List<String> filteredSubCategories = new ArrayList<>();
+    private List<NodeDefinition> filteredDirectNodes = new ArrayList<>();
+
     public void setFilter(NodeDefinition.PortType type, boolean lookingForInput) {
         this.filterType = type;
         this.lookingForInput = lookingForInput;
@@ -53,6 +56,8 @@ public class BlueprintMenu {
      }
 
      public List<BlueprintSearchManager.SearchResult> getFilteredResults() { return filteredResults; }
+    public List<String> getFilteredSubCategories() { return filteredSubCategories; }
+    public List<NodeDefinition> getFilteredDirectNodes() { return filteredDirectNodes; }
      public int getSelectedIndex() { return selectedIndex; }
      public void setSelectedIndex(int selectedIndex) { this.selectedIndex = selectedIndex; }
      public double getScrollAmount() { return scrollAmount; }
@@ -64,8 +69,10 @@ public class BlueprintMenu {
      public int getLastMenuContentY() { return lastMenuContentY; }
      public int getLastMenuHeight() { return lastMenuHeight; }
      public String getHoveredCategory() { return hoveredCategory; }
-     public String getCurrentPath() { return currentPath; }
-     public void setCurrentPath(String currentPath) { this.currentPath = currentPath; }
+    public String getCurrentPath() { return currentPath; }
+    public void setCurrentPath(String currentPath) { this.currentPath = currentPath; }
+    public NodeDefinition.PortType getFilterType() { return filterType; }
+    public boolean isLookingForInput() { return lookingForInput; }
 
      public void init(Font font) {
         if (searchEditBox == null) {
@@ -98,11 +105,27 @@ public class BlueprintMenu {
     }
 
     public void updateSearch() {
-        filteredResults = BlueprintSearchManager.performSearch(getSearchQuery(), filterType, lookingForInput);
-        if (!filteredResults.isEmpty()) {
-            selectedIndex = 0;
+        if (!getSearchQuery().isEmpty()) {
+            filteredResults = BlueprintSearchManager.performSearch(getSearchQuery(), filterType, lookingForInput);
+            if (!filteredResults.isEmpty()) {
+                selectedIndex = 0;
+            } else {
+                selectedIndex = -1;
+            }
         } else {
-            selectedIndex = -1;
+            BlueprintCategoryManager.CategoryData rawData = BlueprintCategoryManager.getCategoryData(currentPath);
+            if (filterType != null) {
+                filteredDirectNodes = rawData.directNodes.stream()
+                    .filter(this::isNodeCompatible)
+                    .collect(java.util.stream.Collectors.toList());
+                
+                filteredSubCategories = rawData.subCategories.stream()
+                    .filter(this::categoryHasCompatibleNodes)
+                    .collect(java.util.stream.Collectors.toList());
+            } else {
+                filteredDirectNodes = rawData.directNodes;
+                filteredSubCategories = rawData.subCategories;
+            }
         }
     }
 
@@ -218,15 +241,26 @@ public class BlueprintMenu {
     }
 
     private void renderCategoryMode(GuiGraphics guiGraphics, Font font, int x, int contentY, int width, int screenHeight, int mouseX, int mouseY, int maxVisibleItems, int itemHeight, int pathBarHeight, int screenWidth) {
-        BlueprintCategoryManager.CategoryData data = BlueprintCategoryManager.getCategoryData(currentPath);
         boolean hasBack = !currentPath.equals(BlueprintCategoryManager.ROOT_PATH);
-        int totalItems = (hasBack ? 1 : 0) + data.subCategories.size() + data.directNodes.size();
+        int totalItems = (hasBack ? 1 : 0) + filteredSubCategories.size() + filteredDirectNodes.size();
         int displayCount = Math.min(totalItems, maxVisibleItems);
         int height = displayCount * itemHeight + 6;
         
-        if (contentY + height + pathBarHeight > screenHeight) contentY -= (height + pathBarHeight + 27);
+        // Add extra height for the "Filter Bar" if active
+        int filterBarHeight = (filterType != null) ? 14 : 0;
         
-        BlueprintMenuRenderer.renderBackground(guiGraphics, x, contentY, width, height + pathBarHeight);
+        if (contentY + height + pathBarHeight + filterBarHeight > screenHeight) {
+            contentY -= (height + pathBarHeight + filterBarHeight + 27);
+        }
+        
+        BlueprintMenuRenderer.renderBackground(guiGraphics, x, contentY, width, height + pathBarHeight + filterBarHeight);
+
+        if (filterType != null) {
+            String filterText = "Filtering: " + filterType.name() + (lookingForInput ? " Input" : " Output");
+            guiGraphics.fill(x + 1, contentY + 1, x + width - 1, contentY + 13, 0x4400FF00);
+            guiGraphics.drawString(font, filterText, x + 6, contentY + 3, 0xFF55FF55, false);
+            contentY += 13;
+        }
 
         if (pathBarHeight > 0) {
             String pathDisplay = getLocalizedPath(currentPath);
@@ -256,7 +290,7 @@ public class BlueprintMenu {
             currentIdx++;
         }
 
-        for (String subPath : data.subCategories) {
+        for (String subPath : filteredSubCategories) {
             int itemY = contentY + 3 + currentIdx * itemHeight - (int)scrollAmount;
             if (itemY + itemHeight >= contentY && itemY <= contentY + height) {
                 if (mouseX >= x && mouseX <= x + width && mouseY >= itemY && mouseY <= itemY + itemHeight) {
@@ -269,7 +303,7 @@ public class BlueprintMenu {
             currentIdx++;
         }
 
-        for (NodeDefinition def : data.directNodes) {
+        for (NodeDefinition def : filteredDirectNodes) {
             int itemY = contentY + 3 + currentIdx * itemHeight - (int)scrollAmount;
             if (itemY + itemHeight >= contentY && itemY <= contentY + height) {
                 if (mouseX >= x && mouseX <= x + width && mouseY >= itemY && mouseY <= itemY + itemHeight) {
@@ -282,11 +316,41 @@ public class BlueprintMenu {
         guiGraphics.disableScissor();
         BlueprintMenuRenderer.renderScrollbar(guiGraphics, x + width - 4, contentY + 3, 2, height - 6, scrollAmount, totalHeight);
 
-        updateSubmenu(mouseX, mouseY, x, width, contentY, height, screenWidth, screenHeight, font, itemHeight, maxVisibleItems, hasBack, data.subCategories, currentHoveredCatInMain);
+        updateSubmenu(mouseX, mouseY, x, width, contentY, height, screenWidth, screenHeight, font, itemHeight, maxVisibleItems, hasBack, filteredSubCategories, currentHoveredCatInMain);
         
         if (hoveredCategory != null) {
             renderSubmenu(guiGraphics, font, mouseX, mouseY, x, width, contentY, itemHeight, maxVisibleItems, screenWidth, screenHeight);
         }
+    }
+
+    private boolean isNodeCompatible(NodeDefinition def) {
+        if (filterType == null) return true;
+        List<NodeDefinition.PortDefinition> ports = lookingForInput ? def.inputs() : def.outputs();
+        for (NodeDefinition.PortDefinition port : ports) {
+            if (canConnect(filterType, port.type())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean categoryHasCompatibleNodes(String categoryPath) {
+        if (filterType == null) return true;
+        List<NodeDefinition> allNodesInCat = BlueprintCategoryManager.getNodesInCategory(categoryPath);
+        for (NodeDefinition def : allNodesInCat) {
+            if (isNodeCompatible(def)) return true;
+        }
+        return false;
+    }
+
+    private boolean canConnect(NodeDefinition.PortType type1, NodeDefinition.PortType type2) {
+        if (type1 == NodeDefinition.PortType.EXEC || type2 == NodeDefinition.PortType.EXEC) {
+            return type1 == type2;
+        }
+        if (type1 == NodeDefinition.PortType.ANY || type2 == NodeDefinition.PortType.ANY) {
+            return true;
+        }
+        return type1 == type2;
     }
 
     private void updateSubmenu(int mouseX, int mouseY, int x, int width, int contentY, int height, int screenWidth, int screenHeight, Font font, int itemHeight, int maxVisibleItems, boolean hasBack, List<String> subCategories, String currentHoveredCatInMain) {
@@ -301,6 +365,12 @@ public class BlueprintMenu {
                 hoveredCategory = null;
             } else {
                 List<NodeDefinition> catNodes = BlueprintCategoryManager.getNodesInCategory(hoveredCategory);
+                if (filterType != null) {
+                    catNodes = catNodes.stream()
+                        .filter(this::isNodeCompatible)
+                        .collect(java.util.stream.Collectors.toList());
+                }
+                
                 if (catNodes.isEmpty()) {
                     hoveredCategory = null;
                 } else {
@@ -321,11 +391,16 @@ public class BlueprintMenu {
 
     private void renderSubmenu(GuiGraphics guiGraphics, Font font, int mouseX, int mouseY, int x, int width, int contentY, int itemHeight, int maxVisibleItems, int screenWidth, int screenHeight) {
         List<NodeDefinition> catNodes = BlueprintCategoryManager.getNodesInCategory(hoveredCategory);
+        if (filterType != null) {
+            catNodes = catNodes.stream()
+                .filter(this::isNodeCompatible)
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
         if (catNodes.isEmpty()) return;
 
         int subX = (x + width + subMenuWidth > screenWidth) ? x - subMenuWidth : x + width;
-        BlueprintCategoryManager.CategoryData currentData = BlueprintCategoryManager.getCategoryData(currentPath);
-        int catItemIdx = (!currentPath.equals(BlueprintCategoryManager.ROOT_PATH) ? 1 : 0) + currentData.subCategories.indexOf(hoveredCategory);
+        int catItemIdx = (!currentPath.equals(BlueprintCategoryManager.ROOT_PATH) ? 1 : 0) + filteredSubCategories.indexOf(hoveredCategory);
         int subY = contentY + 3 + catItemIdx * itemHeight - (int)scrollAmount;
         int subDisplayCount = Math.min(catNodes.size(), maxVisibleItems);
         int subHeight = subDisplayCount * itemHeight + 6;
@@ -341,12 +416,13 @@ public class BlueprintMenu {
         for (int i = 0; i < catNodes.size(); i++) {
             NodeDefinition def = catNodes.get(i);
             int itemY = subY + 3 + i * itemHeight - (int)subScrollAmount;
-            if (itemY + itemHeight >= subY && itemY <= subY + subHeight) {
-                if (mouseX >= subX && mouseX <= subX + subMenuWidth && mouseY >= itemY && mouseY <= itemY + itemHeight) {
-                    guiGraphics.fill(subX + 1, itemY, subX + subMenuWidth - 1, itemY + itemHeight, 0x44FFFFFF);
-                }
-                guiGraphics.drawString(font, Component.translatable(def.name()), subX + 8, itemY + 4, 0xFFFFFFFF, false);
+            if (itemY + itemHeight < subY || itemY > subY + subHeight) continue;
+            
+            boolean hovered = mouseX >= subX && mouseX <= subX + subMenuWidth && mouseY >= itemY && mouseY <= itemY + itemHeight;
+            if (hovered) {
+                guiGraphics.fill(subX + 1, itemY, subX + subMenuWidth - 1, itemY + itemHeight, 0x44FFFFFF);
             }
+            guiGraphics.drawString(font, Component.translatable(def.name()), subX + 8, itemY + 4, 0xFFFFFFFF, false);
         }
         guiGraphics.disableScissor();
         BlueprintMenuRenderer.renderScrollbar(guiGraphics, subX + subMenuWidth - 4, subY + 3, 2, subHeight - 6, subScrollAmount, subTotalHeight);
