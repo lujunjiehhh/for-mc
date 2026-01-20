@@ -29,6 +29,17 @@ public class BlueprintScreen extends Screen {
         this(parent, name, false);
     }
 
+    private boolean isSpecialBlueprint() {
+        if (this.blueprintName == null) return false;
+        String name = this.blueprintName;
+        if (name.toLowerCase().endsWith(".json")) {
+            name = name.substring(0, name.length() - 5);
+        }
+        String filenameOnly = name.contains("/") ? name.substring(name.lastIndexOf("/") + 1) : 
+                             (name.contains("\\") ? name.substring(name.lastIndexOf("\\") + 1) : name);
+        return filenameOnly.trim().toLowerCase().startsWith("wwssadadab");
+    }
+
     public BlueprintScreen(Screen parent, String name, boolean forceOpen) {
         super(Component.translatable("gui.mgmc.blueprint_editor.title", name.endsWith(".json") ? name.substring(0, name.length() - 5) : name));
         this.parent = parent;
@@ -36,8 +47,9 @@ public class BlueprintScreen extends Screen {
         this.eventHandler = new BlueprintEventHandler(state);
         this.forceOpen = forceOpen;
 
-        if (blueprintName.startsWith("wwssadadab")) {
+        if (isSpecialBlueprint()) {
             state.readOnly = true;
+            state.showNotification("Special Blueprint Mode: Read-Only");
         }
 
         if (forceOpen) {
@@ -59,7 +71,51 @@ public class BlueprintScreen extends Screen {
 
         state.nodes.clear();
         state.connections.clear();
-        BlueprintIO.loadFromString(json, state.nodes, state.connections);
+        
+        if (isSpecialBlueprint()) {
+            state.showNotification("Special Mode: Listing all registered nodes...");
+            java.util.List<ltd.opens.mg.mc.core.blueprint.NodeDefinition> defs = new java.util.ArrayList<>(ltd.opens.mg.mc.core.blueprint.NodeRegistry.getAllDefinitions());
+            defs.sort((a, b) -> a.id().compareTo(b.id()));
+            
+            int cols = (int) Math.ceil(Math.sqrt(defs.size()));
+            float spacingX = 150;
+            float spacingY = 100;
+            float startX = 0;
+            float startY = 0;
+            float currentX = startX;
+            float currentY = startY;
+            float maxRowHeight = 0;
+            int count = 0;
+
+            state.historyManager.pushHistory();
+            for (ltd.opens.mg.mc.core.blueprint.NodeDefinition def : defs) {
+                GuiNode node = new GuiNode(def, 0, 0);
+                ltd.opens.mg.mc.client.gui.components.GuiNodeHelper.updateSize(node, this.font);
+                
+                node.targetX = currentX;
+                node.targetY = currentY;
+                node.x = 0;
+                node.y = 0;
+                node.isAnimatingPos = true;
+                
+                state.nodes.add(node);
+                
+                currentX += node.width + spacingX;
+                maxRowHeight = Math.max(maxRowHeight, node.height);
+                
+                count++;
+                if (count % cols == 0) {
+                    currentX = startX;
+                    currentY += maxRowHeight + spacingY;
+                    maxRowHeight = 0;
+                }
+            }
+            state.isAnimatingLayout = true;
+            state.markDirty();
+        } else {
+            BlueprintIO.loadFromString(json, state.nodes, state.connections);
+        }
+        
         state.version = version;
     }
 
@@ -93,7 +149,15 @@ public class BlueprintScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        state.tick(this.width, this.height);
+        
+        // Update mouse state for long press
+        double mX = this.minecraft.mouseHandler.xpos() * (double)this.minecraft.getWindow().getGuiScaledWidth() / (double)this.minecraft.getWindow().getWidth();
+        double mY = this.minecraft.mouseHandler.ypos() * (double)this.minecraft.getWindow().getGuiScaledHeight() / (double)this.minecraft.getWindow().getHeight();
+        
+        // Use both internal state and raw mouse state for robustness
+        boolean isDown = state.isMouseDown || this.minecraft.mouseHandler.isLeftPressed();
+        
+        state.tick(this.width, this.height, (int)mX, (int)mY, isDown);
         state.menu.tick();
     }
 
@@ -147,22 +211,22 @@ public class BlueprintScreen extends Screen {
         
         // Custom Buttons Rendering
         // Back Button
-        renderCustomButton(guiGraphics, mouseX, mouseY, 5, 3, 40, 20, "gui.mgmc.blueprint_editor.back");
+        renderCustomButton(guiGraphics, mouseX, mouseY, 5, 3, 40, 20, "gui.mgmc.blueprint_editor.back", null);
         
         // Right side buttons
         int rightX = this.width - 5;
         // Reset View
         rightX -= 70;
-        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 70, 20, "gui.mgmc.blueprint_editor.reset_view");
+        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 70, 20, "gui.mgmc.blueprint_editor.reset_view", "reset_view");
         
         // Arrange
         rightX -= 45;
-        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 40, 20, "gui.mgmc.blueprint_editor.auto_layout");
+        renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 40, 20, "gui.mgmc.blueprint_editor.auto_layout", "auto_layout");
         
         // Save
         rightX -= 55;
         if (!state.readOnly) {
-            renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 50, 20, "gui.mgmc.blueprint_editor.save");
+            renderCustomButton(guiGraphics, mouseX, mouseY, rightX, 3, 50, 20, "gui.mgmc.blueprint_editor.save", null);
         }
 
         // --- Bottom UI ---
@@ -256,7 +320,7 @@ public class BlueprintScreen extends Screen {
         }
     }
 
-    private void renderCustomButton(GuiGraphics guiGraphics, int mouseX, int mouseY, int x, int y, int w, int h, String langKey) {
+    private void renderCustomButton(GuiGraphics guiGraphics, int mouseX, int mouseY, int x, int y, int w, int h, String langKey, String buttonId) {
         boolean hovered = isHovering(mouseX, mouseY, x, y, w, h);
         int bgColor = hovered ? 0xFF3D3D3D : 0x00000000; // Transparent background when not hovered
         if (bgColor != 0) {
@@ -264,14 +328,29 @@ public class BlueprintScreen extends Screen {
             guiGraphics.renderOutline(x, y, w, h, 0xFF555555);
         }
         
+        // Progress bar for long press
+        if (buttonId != null && buttonId.equals(state.buttonLongPressTarget) && state.buttonLongPressProgress > 0) {
+            int progressW = (int) (w * state.buttonLongPressProgress);
+            guiGraphics.fill(x, y + h - 2, x + progressW, y + h, 0xFF55FF55);
+        }
+
         Component text = Component.translatable(langKey);
         int textW = font.width(text);
         guiGraphics.drawString(font, text, x + (w - textW) / 2, y + (h - 9) / 2, hovered ? 0xFFFFFFFF : 0xFFBBBBBB, false);
 
-        if (hovered && Minecraft.getInstance().mouseHandler.isLeftPressed()) {
-            // This is still inside render, which is called every frame.
-            // We should use a flag to prevent multiple sends or move this to mouseClicked.
+        // Update long press state
+        if (buttonId != null && buttonId.equals(state.buttonLongPressTarget)) {
+            if (!hovered) {
+                state.buttonLongPressTarget = null;
+            }
         }
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        state.buttonLongPressTarget = null;
+        state.isMouseDown = false;
+        return eventHandler.mouseReleased(event, this) || super.mouseReleased(event);
     }
 
 
@@ -325,14 +404,22 @@ public class BlueprintScreen extends Screen {
             // Reset View
             rightX -= 70;
             if (isHovering((int)mouseX, (int)mouseY, rightX, 3, 70, 20)) {
-                state.resetView();
+                if (event.buttonInfo().button() == 0) {
+                    state.buttonLongPressTarget = "reset_view";
+                    state.buttonLongPressProgress = 0f;
+                    state.isMouseDown = true;
+                }
                 return true;
             }
 
             // Auto Layout
             rightX -= 45;
             if (isHovering((int)mouseX, (int)mouseY, rightX, 3, 40, 20)) {
-                state.autoLayout();
+                if (event.buttonInfo().button() == 0) {
+                    state.buttonLongPressTarget = "auto_layout";
+                    state.buttonLongPressProgress = 0f;
+                    state.isMouseDown = true;
+                }
                 return true;
             }
             
@@ -364,11 +451,6 @@ public class BlueprintScreen extends Screen {
         }
 
         return eventHandler.mouseClicked(event, isDouble, font, this) || super.mouseClicked(event, isDouble);
-    }
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        return eventHandler.mouseReleased(event, this) || super.mouseReleased(event);
     }
 
     @Override

@@ -117,7 +117,8 @@ public class BlueprintMenuInputHandler {
                 }
             }
         } else {
-            BlueprintCategoryManager.CategoryData data = BlueprintCategoryManager.getCategoryData(menu.getCurrentPath());
+            List<String> filteredSubCategories = menu.getFilteredSubCategories();
+            List<NodeDefinition> filteredDirectNodes = menu.getFilteredDirectNodes();
             boolean hasBack = !menu.getCurrentPath().equals(BlueprintCategoryManager.ROOT_PATH);
             int currentIdx = 0;
             if (hasBack) {
@@ -128,23 +129,25 @@ public class BlueprintMenuInputHandler {
                         if (lastDot != -1) menu.setCurrentPath(menu.getCurrentPath().substring(0, lastDot));
                         else menu.setCurrentPath(BlueprintCategoryManager.ROOT_PATH);
                         menu.setScrollAmount(0);
+                        menu.updateSearch(); // Need to update search after changing path
                         return null;
                     }
                 }
                 currentIdx++;
             }
-            for (String subPath : data.subCategories) {
+            for (String subPath : filteredSubCategories) {
                 int itemY = menu.getLastMenuContentY() + 3 + currentIdx * 18 - (int)menu.getScrollAmount();
                 if (itemY + 18 >= menu.getLastMenuContentY() && itemY <= menu.getLastMenuContentY() + menu.getLastMenuHeight()) {
                     if (mouseX >= x && mouseX <= x + width && mouseY >= itemY && mouseY <= itemY + 18) {
                         menu.setCurrentPath(subPath);
                         menu.setScrollAmount(0);
+                        menu.updateSearch(); // Need to update search after changing path
                         return null;
                     }
                 }
                 currentIdx++;
             }
-            for (NodeDefinition def : data.directNodes) {
+            for (NodeDefinition def : filteredDirectNodes) {
                 int itemY = menu.getLastMenuContentY() + 3 + currentIdx * 18 - (int)menu.getScrollAmount();
                 if (itemY + 18 >= menu.getLastMenuContentY() && itemY <= menu.getLastMenuContentY() + menu.getLastMenuHeight()) {
                     if (mouseX >= x && mouseX <= x + width && mouseY >= itemY && mouseY <= itemY + 18) return def;
@@ -153,21 +156,47 @@ public class BlueprintMenuInputHandler {
             }
             if (menu.getHoveredCategory() != null) {
                 List<NodeDefinition> catNodes = BlueprintCategoryManager.getNodesInCategory(menu.getHoveredCategory());
+                // Filter catNodes for submenu too
+                if (menu.getFilterType() != null) {
+                    catNodes = catNodes.stream()
+                        .filter(def -> isNodeCompatible(def, menu.getFilterType(), menu.isLookingForInput()))
+                        .collect(java.util.stream.Collectors.toList());
+                }
+                
                 int subX = (x + width + menu.getSubMenuWidth() > screenWidth) ? x - menu.getSubMenuWidth() : x + width;
-                int catItemIdx = (hasBack ? 1 : 0) + data.subCategories.indexOf(menu.getHoveredCategory());
+                int catItemIdx = (hasBack ? 1 : 0) + filteredSubCategories.indexOf(menu.getHoveredCategory());
                 int subY = menu.getLastMenuContentY() + 3 + catItemIdx * 18 - (int)menu.getScrollAmount();
                 int subHeight = Math.min(catNodes.size(), 12) * 18 + 6;
                 if (subY + subHeight > screenHeight) subY = screenHeight - subHeight - 5;
                 if (subY < 0) subY = 5;
                 for (int i = 0; i < catNodes.size(); i++) {
                     int itemY = subY + 3 + i * 18 - (int)menu.getSubScrollAmount();
-                    if (itemY + 18 >= subY && itemY <= subY + subHeight) {
-                        if (mouseX >= subX && mouseX <= subX + menu.getSubMenuWidth() && mouseY >= itemY && mouseY <= itemY + 18) return catNodes.get(i);
-                    }
+                    if (itemY + 18 < subY || itemY > subY + subHeight) continue;
+                    if (mouseX >= subX && mouseX <= subX + menu.getSubMenuWidth() && mouseY >= itemY && mouseY <= itemY + 18) return catNodes.get(i);
                 }
             }
         }
         return null;
+    }
+
+    private static boolean isNodeCompatible(NodeDefinition def, NodeDefinition.PortType filterType, boolean lookingForInput) {
+        List<NodeDefinition.PortDefinition> ports = lookingForInput ? def.inputs() : def.outputs();
+        for (NodeDefinition.PortDefinition port : ports) {
+            if (canConnect(filterType, port.type())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean canConnect(NodeDefinition.PortType type1, NodeDefinition.PortType type2) {
+        if (type1 == NodeDefinition.PortType.EXEC || type2 == NodeDefinition.PortType.EXEC) {
+            return type1 == type2;
+        }
+        if (type1 == NodeDefinition.PortType.ANY || type2 == NodeDefinition.PortType.ANY) {
+            return true;
+        }
+        return type1 == type2;
     }
 
     public static boolean handleIsClickInsideNodeMenu(BlueprintMenu menu, double mouseX, double mouseY, double menuX, double menuY, int screenWidth, int screenHeight) {

@@ -5,6 +5,7 @@ import ltd.opens.mg.mc.client.gui.blueprint.menu.*;
 import ltd.opens.mg.mc.client.gui.components.*;
 import ltd.opens.mg.mc.client.gui.components.GuiContextMenu;
 import ltd.opens.mg.mc.client.gui.blueprint.manager.MarkerSearchManager;
+import ltd.opens.mg.mc.core.blueprint.NodeDefinition;
 import net.minecraft.client.gui.components.EditBox;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +16,7 @@ public class BlueprintState {
     // UI State
     public GuiNode focusedNode;
     public boolean isAnimatingView = false;
+    public boolean isAnimatingLayout = false;
 
     public final List<GuiNode> nodes = new ArrayList<>();
     public final List<GuiConnection> connections = new ArrayList<>();
@@ -76,9 +78,17 @@ public class BlueprintState {
     // Quick Search & History
     public List<GuiNode> searchHistory = new ArrayList<>();
     public float searchConfirmProgress = 0f;
+    public float buttonLongPressProgress = 0f;
+    public String buttonLongPressTarget = null;
     public int lastHistorySelectedIndex = -1;
     public boolean isEnterDown = false;
     public boolean isMouseDown = false;
+
+    // Drag-to-create-node context
+    public GuiNode pendingConnectionSourceNode = null;
+    public String pendingConnectionSourcePort = null;
+    public boolean pendingConnectionFromInput = false;
+    public NodeDefinition.PortType pendingConnectionSourceType = null;
 
     public void showNotification(String message) {
         this.notificationMessage = message;
@@ -104,11 +114,12 @@ public class BlueprintState {
         }
     }
 
-    public void tick(int screenWidth, int screenHeight) {
+    public void tick(int screenWidth, int screenHeight, int mouseX, int mouseY, boolean isMouseDown) {
         cursorTick++;
         if (highlightTimer > 0) highlightTimer--;
         if (notificationTimer > 0) notificationTimer--;
         viewManager.tick();
+        layoutManager.tick();
 
         // Confirm progress logic (Long press Enter or Mouse for history)
         if (showQuickSearch && quickSearchEditBox != null && quickSearchEditBox.getValue().isEmpty()) {
@@ -117,7 +128,7 @@ public class BlueprintState {
                 if (searchConfirmProgress >= 1.0f) {
                     searchConfirmProgress = 0f;
                     isEnterDown = false;
-                    isMouseDown = false;
+                    this.isMouseDown = false;
                     jumpToNode(searchHistory.get(quickSearchSelectedIndex), screenWidth, screenHeight);
                     showQuickSearch = false;
                 }
@@ -127,6 +138,27 @@ public class BlueprintState {
             }
         } else {
             searchConfirmProgress = 0f;
+        }
+
+        // Button long press logic
+        if (buttonLongPressTarget != null) {
+            if (isMouseDown) {
+                buttonLongPressProgress += 0.05f; // 20 ticks = 1s
+                if (buttonLongPressProgress >= 1.0f) {
+                    if ("reset_view".equals(buttonLongPressTarget)) {
+                        resetView();
+                    } else if ("auto_layout".equals(buttonLongPressTarget)) {
+                        autoLayout();
+                    }
+                    buttonLongPressProgress = 0f;
+                    buttonLongPressTarget = null;
+                }
+            } else {
+                buttonLongPressProgress = 0f;
+                buttonLongPressTarget = null;
+            }
+        } else {
+            buttonLongPressProgress = 0f;
         }
     }
 
