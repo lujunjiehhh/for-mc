@@ -31,14 +31,32 @@ public class BlueprintNetworkHandler {
             var manager = MaingraphforMC.getServerManager();
             if (manager == null) return java.util.Collections.emptyList();
             
+            java.util.Set<String> blueprintNames = new java.util.HashSet<>();
+            
+            // 1. 优先从存档目录加载
             try (var stream = java.nio.file.Files.list(manager.getBlueprintsDir(level))) {
-                return stream.filter(p -> p.toString().endsWith(".json"))
+                stream.filter(p -> p.toString().endsWith(".json"))
                         .map(p -> p.getFileName().toString())
-                        .collect(Collectors.toList());
+                        .forEach(blueprintNames::add);
             } catch (Exception e) {
-                LOGGER.error("Failed to list blueprints", e);
-                return java.util.Collections.emptyList();
+                LOGGER.error("Failed to list local blueprints", e);
             }
+
+            // 2. 如果不是专服/联机模式，合并全局目录蓝图（不重复添加）
+            boolean isMultiplayer = level.getServer().isDedicatedServer() || level.getServer().isPublished();
+            if (!isMultiplayer) {
+                try (var stream = java.nio.file.Files.list(ltd.opens.mg.mc.core.blueprint.BlueprintManager.getGlobalBlueprintsDir())) {
+                    stream.filter(p -> p.toString().endsWith(".json"))
+                            .map(p -> p.getFileName().toString())
+                            .forEach(blueprintNames::add);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to list global blueprints", e);
+                }
+            }
+
+            java.util.List<String> result = new java.util.ArrayList<>(blueprintNames);
+            java.util.Collections.sort(result);
+            return result;
         }
 
         public static void handleRequestList(final RequestBlueprintListPayload payload, final IPayloadContext context) {

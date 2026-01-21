@@ -62,6 +62,7 @@ public class BlueprintSelectionForMappingScreen extends Screen {
                               .forEach(files::add);
                     }
                 }
+                java.util.Collections.sort(files);
                 updateListFromServer(files);
             } catch (java.io.IOException e) {
                 MaingraphforMC.LOGGER.error("Failed to list global blueprints for mapping", e);

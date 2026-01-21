@@ -333,25 +333,43 @@ public class BlueprintManager {
             }
         }
 
-        List<JsonObject> all = new ArrayList<>();
+        Map<String, JsonObject> all = new LinkedHashMap<>();
         try {
+            // 1. 优先加载存档蓝图
             Path dir = getBlueprintsDir(level);
             try (var stream = Files.list(dir)) {
                 stream.filter(p -> p.toString().endsWith(".json")).forEach(p -> {
                     String name = p.getFileName().toString();
                     JsonObject bp = getBlueprint(level, name);
-                    if (bp != null) all.add(bp);
+                    if (bp != null) all.put(name, bp);
                 });
             }
+
+            // 2. 如果不是专服/联机模式，加载全局蓝图（不覆盖同名存档蓝图）
+            boolean isMultiplayer = level != null && (level.getServer().isDedicatedServer() || level.getServer().isPublished());
+            if (!isMultiplayer) {
+                Path globalDir = getGlobalBlueprintsDir();
+                try (var stream = Files.list(globalDir)) {
+                    stream.filter(p -> p.toString().endsWith(".json")).forEach(p -> {
+                        String name = p.getFileName().toString();
+                        if (!all.containsKey(name)) {
+                            JsonObject bp = getBlueprint(level, name);
+                            if (bp != null) all.put(name, bp);
+                        }
+                    });
+                }
+            }
+
             synchronized (allBlueprintsCache) {
                 allBlueprintsCache.clear();
-                allBlueprintsCache.addAll(all);
+                allBlueprintsCache.addAll(all.values());
                 lastAllBlueprintsRefresh = now;
             }
         } catch (IOException e) {
-            LOGGER.error("Failed to list blueprints in " + getBlueprintsDir(level), e);
+            LOGGER.error("Failed to list blueprints", e);
         }
-        return all;
+
+        return new ArrayList<>(all.values());
     }
 
     public List<JsonObject> getBlueprintsForId(ServerLevel level, String... ids) {
