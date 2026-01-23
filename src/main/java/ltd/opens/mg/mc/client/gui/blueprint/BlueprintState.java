@@ -6,7 +6,12 @@ import ltd.opens.mg.mc.client.gui.components.*;
 import ltd.opens.mg.mc.client.gui.components.GuiContextMenu;
 import ltd.opens.mg.mc.client.gui.blueprint.manager.MarkerSearchManager;
 import ltd.opens.mg.mc.core.blueprint.NodeDefinition;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.util.Util;
+import ltd.opens.mg.mc.client.gui.screens.BlueprintScreen;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -139,11 +144,15 @@ public class BlueprintState {
                 wPressUrl = url;
                 wPressProgress += 0.04f; // 25 ticks = 1.25s
                 if (wPressProgress >= 1.0f) {
+                    System.out.println("MGMC: Long press W completed for URL: " + url);
                     wPressProgress = 0f;
                     isWDown = false;
                     openWebpage(url);
                 }
             } else {
+                if (wPressProgress > 0) {
+                    System.out.println("MGMC: W down but no web_url found in selected nodes");
+                }
                 wPressProgress *= 0.8f;
                 if (wPressProgress < 0.01f) {
                     wPressProgress = 0f;
@@ -204,11 +213,27 @@ public class BlueprintState {
     }
 
     private void openWebpage(String url) {
-        try {
-            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (url == null || url.isEmpty()) return;
+        
+        System.out.println("MGMC: Attempting to open webpage: " + url);
+        
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            mc.player.displayClientMessage(Component.literal("§a[MGMC] §7正在尝试打开: §n" + url), false);
         }
+
+        // 先尝试最直接的方式
+        try {
+            if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+                return;
+            }
+        } catch (Exception e) {
+            System.err.println("MGMC: Desktop browse failed, falling back to Util: " + e.getMessage());
+        }
+
+        // 保底方案
+        Util.getPlatform().openUri(url);
     }
 
     public void updateQuickSearchMatches() {
