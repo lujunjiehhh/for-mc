@@ -255,6 +255,7 @@ public class ActionNodes {
         NodeHelper.setup("kill_entity", "node.mgmc.kill_entity.name")
             .category("node_category.mgmc.action.entity")
             .color(NodeThemes.COLOR_NODE_ACTION)
+            .property("web_url", "https://mc.maingraph.nb6.ltd/docs/nodes/action/kill_entity")
             .input(NodePorts.EXEC, "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .input(NodePorts.ENTITY, "node.mgmc.port.entity", NodeDefinition.PortType.ENTITY, NodeThemes.COLOR_PORT_ENTITY)
             .output(NodePorts.EXEC, "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)

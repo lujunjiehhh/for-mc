@@ -154,6 +154,29 @@ public class BlueprintRenderer {
         guiGraphics.renderOutline(minX, minY, maxX - minX, maxY - minY, 0xFF4488FF);
     }
 
+    public static void drawWPressProgressBar(GuiGraphics guiGraphics, BlueprintState state, int screenWidth, int screenHeight, net.minecraft.client.gui.Font font) {
+        if (state.wPressProgress <= 0) return;
+
+        int barWidth = 200;
+        int barHeight = 4;
+        int x = (screenWidth - barWidth) / 2;
+        int y = screenHeight - 60;
+
+        // Draw background
+        guiGraphics.fill(x - 2, y - 12, x + barWidth + 2, y + barHeight + 2, 0xAA000000);
+        
+        // Draw label
+        String label = Component.translatable("gui.mgmc.blueprint.opening_webpage").getString();
+        guiGraphics.drawCenteredString(font, label, screenWidth / 2, y - 10, 0xFFFFFFFF);
+
+        // Draw bar background
+        guiGraphics.fill(x, y, x + barWidth, y + barHeight, 0xFF444444);
+        
+        // Draw progress
+        int progressWidth = (int) (barWidth * state.wPressProgress);
+        guiGraphics.fill(x, y, x + progressWidth, y + barHeight, 0xFF55FFFF);
+    }
+
     public static void drawMinimap(GuiGraphics guiGraphics, BlueprintState state, int screenWidth, int screenHeight) {
         if (!state.showMinimap || state.nodes.isEmpty()) return;
 

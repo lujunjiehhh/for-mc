@@ -83,6 +83,9 @@ public class BlueprintState {
     public int lastHistorySelectedIndex = -1;
     public boolean isEnterDown = false;
     public boolean isMouseDown = false;
+    public boolean isWDown = false;
+    public float wPressProgress = 0f;
+    public String wPressUrl = null;
 
     // Drag-to-create-node context
     public GuiNode pendingConnectionSourceNode = null;
@@ -120,6 +123,40 @@ public class BlueprintState {
         if (notificationTimer > 0) notificationTimer--;
         viewManager.tick();
         layoutManager.tick();
+
+        // W Long Press Logic
+        if (isWDown && !selectedNodes.isEmpty() && !showQuickSearch && editingMarkerNode == null) {
+            // Find first selected node with a web_url
+            String url = null;
+            for (GuiNode node : selectedNodes) {
+                if (node.definition != null && node.definition.properties().containsKey("web_url")) {
+                    url = (String) node.definition.properties().get("web_url");
+                    break;
+                }
+            }
+
+            if (url != null) {
+                wPressUrl = url;
+                wPressProgress += 0.04f; // 25 ticks = 1.25s
+                if (wPressProgress >= 1.0f) {
+                    wPressProgress = 0f;
+                    isWDown = false;
+                    openWebpage(url);
+                }
+            } else {
+                wPressProgress *= 0.8f;
+                if (wPressProgress < 0.01f) {
+                    wPressProgress = 0f;
+                    wPressUrl = null;
+                }
+            }
+        } else {
+            wPressProgress *= 0.8f;
+            if (wPressProgress < 0.01f) {
+                wPressProgress = 0f;
+                wPressUrl = null;
+            }
+        }
 
         // Confirm progress logic (Long press Enter or Mouse for history)
         if (showQuickSearch && quickSearchEditBox != null && quickSearchEditBox.getValue().isEmpty()) {
@@ -164,6 +201,14 @@ public class BlueprintState {
 
     public void jumpToNode(GuiNode node, int screenWidth, int screenHeight) {
         viewManager.jumpToNode(node, screenWidth, screenHeight);
+    }
+
+    private void openWebpage(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void updateQuickSearchMatches() {

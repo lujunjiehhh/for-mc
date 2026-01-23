@@ -49,6 +49,7 @@
   "gui.mgmc.notification.redo": "重做成功",
   "gui.mgmc.blueprint_editor.modal.select_type": "选择类型",
   "gui.mgmc.blueprint_editor.modal.enter_value": "输入 %s",
+  "gui.mgmc.blueprint.opening_webpage": "正在跳转到注册网页...",
   "command.mgmc.mgrun.blueprint_not_found": "未找到蓝图 '%s'。",
   "command.mgmc.mgrun.failed": "执行蓝图失败: %s",
   "gui.mgmc.modal.confirm": "确认",

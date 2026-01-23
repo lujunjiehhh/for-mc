@@ -197,6 +197,9 @@ public class BlueprintScreen extends Screen {
         
         // Minimap
         BlueprintRenderer.drawMinimap(guiGraphics, state, this.width, this.height);
+
+        // W Progress Bar
+        BlueprintRenderer.drawWPressProgressBar(guiGraphics, state, this.width, this.height, this.font);
         
         // Quick Search
         BlueprintRenderer.drawQuickSearch(guiGraphics, state, this.width, this.height, this.font);
