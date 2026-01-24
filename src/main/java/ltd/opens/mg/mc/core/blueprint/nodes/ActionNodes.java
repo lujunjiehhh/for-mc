@@ -370,6 +370,7 @@ public class ActionNodes {
         NodeHelper.setup("clear_potion_effects", "node.mgmc.clear_potion_effects.name")
             .category("node_category.mgmc.action.entity")
             .color(NodeThemes.COLOR_NODE_ACTION)
+            .property("web_url", "http://zhcn-docs.mc.maingraph.nb6.ltd/nodes/action/entity/clear_potion_effects")
             .input(NodePorts.EXEC, "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .input(NodePorts.ENTITY, "node.mgmc.port.entity", NodeDefinition.PortType.ENTITY, NodeThemes.COLOR_PORT_ENTITY)
             .output(NodePorts.EXEC, "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
