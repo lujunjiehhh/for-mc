@@ -232,7 +232,7 @@
   "node.mgmc.port.velocity": "速度",
   "node.mgmc.port.seconds": "秒数",
   "node.mgmc.port.heal_amount": "治疗数值",
-  "node.mgmc.port.duration": "持续时间 (刻)",
+  "node.mgmc.port.duration": "持续时间 (秒)",
   "node.mgmc.port.amplifier": "等级 (0开始)",
   "node.mgmc.port.show_particles": "显示粒子",
   "node.mgmc.port.attacker_entity": "攻击者实体",

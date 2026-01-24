@@ -214,7 +214,7 @@
   "node.mgmc.port.velocity": "Velocity (XYZ)",
   "node.mgmc.port.seconds": "Seconds",
   "node.mgmc.port.heal_amount": "Heal Amount",
-  "node.mgmc.port.duration": "Duration (Ticks)",
+  "node.mgmc.port.duration": "Duration (Seconds)",
   "node.mgmc.port.amplifier": "Amplifier (0+)",
   "node.mgmc.port.show_particles": "Show Particles",
   "node.mgmc.port.attacker_entity": "Attacker Entity",
