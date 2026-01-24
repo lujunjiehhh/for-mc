@@ -342,13 +342,14 @@ public class ActionNodes {
                 NodeLogicRegistry.triggerExec(node, NodePorts.EXEC, ctx);
             });
 
-        // set_entity_velocity (设置实体速度)
-        NodeHelper.setup("set_entity_velocity", "node.mgmc.set_entity_velocity.name")
+        // apply_impulse (施加推力)
+        NodeHelper.setup("apply_impulse", "node.mgmc.apply_impulse.name")
             .category("node_category.mgmc.action.entity")
             .color(NodeThemes.COLOR_NODE_ACTION)
+            .property("web_url", "http://zhcn-docs.mc.maingraph.nb6.ltd/nodes/action/entity/apply_impulse")
             .input(NodePorts.EXEC, "node.mgmc.port.exec_in", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .input(NodePorts.ENTITY, "node.mgmc.port.entity", NodeDefinition.PortType.ENTITY, NodeThemes.COLOR_PORT_ENTITY)
-            .input(NodePorts.XYZ, "node.mgmc.port.velocity", NodeDefinition.PortType.XYZ, NodeThemes.COLOR_PORT_XYZ)
+            .input(NodePorts.XYZ, "node.mgmc.port.impulse", NodeDefinition.PortType.XYZ, NodeThemes.COLOR_PORT_XYZ)
             .output(NodePorts.EXEC, "node.mgmc.port.exec_out", NodeDefinition.PortType.EXEC, NodeThemes.COLOR_PORT_EXEC)
             .registerExec((node, ctx) -> {
                 Object entityObj = NodeLogicRegistry.evaluateInput(node, NodePorts.ENTITY, ctx);
