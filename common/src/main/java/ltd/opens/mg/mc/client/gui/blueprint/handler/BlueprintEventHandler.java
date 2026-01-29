@@ -33,14 +33,19 @@ public class BlueprintEventHandler {
         // 0. Quick Search interactions
         if (state.showQuickSearch) {
             if (state.quickSearchEditBox != null) {
+                // Position it for click detection
+                int searchW = 200;
+                int x = (screen.width - searchW) / 2;
+                int y = screen.height / 4;
+                state.quickSearchEditBox.setX(x + 5);
+                state.quickSearchEditBox.setY(y + 15);
+                state.quickSearchEditBox.setWidth(searchW - 10);
+
                 if (state.quickSearchEditBox.mouseClicked(mouseX, mouseY, button)) {
                     return true;
                 }
                 
                 // Check if clicked on a candidate
-                int searchW = 200;
-                int x = (screen.width - searchW) / 2;
-                int y = screen.height / 4;
                 int itemHeight = 18;
                 int listY = y + 42; // Match BlueprintRenderer listY
                 List<GuiNode> displayList = state.quickSearchEditBox.getValue().isEmpty() ? state.searchHistory : state.quickSearchMatches;
@@ -66,18 +71,32 @@ public class BlueprintEventHandler {
         }
 
         // 0.1 Marker Editing interactions
-        if (state.editingMarkerNode != null) {
-            if (state.markerEditBox != null) {
-                // If clicked outside the node, finish editing
-                double worldMouseX = state.viewport.toWorldX(mouseX);
-                double worldMouseY = state.viewport.toWorldY(mouseY);
-                GuiNode node = state.editingMarkerNode;
-                if (!(worldMouseX >= node.x && worldMouseX <= node.x + node.width && worldMouseY >= node.y && worldMouseY <= node.y + node.height)) {
-                    finishMarkerEditing();
-                } else {
-                    return true; // Clicked inside, keep focus
-                }
+        if (state.editingMarkerNode != null && state.markerEditBox != null) {
+            // Position the edit box for click detection (Screen Space)
+            ltd.opens.mg.mc.client.gui.blueprint.Viewport viewport = state.viewport;
+            ltd.opens.mg.mc.client.gui.components.GuiNode node = state.editingMarkerNode;
+            
+            int sx = (int) viewport.toScreenX(node.x);
+            int sy = (int) viewport.toScreenY(node.y);
+            int sw = (int) (node.width * viewport.zoom);
+            int headerH = (int) (node.headerHeight * viewport.zoom);
+
+            state.markerEditBox.setX(sx + (int)(10 * viewport.zoom));
+            state.markerEditBox.setY(sy + headerH + (int)(10 * viewport.zoom));
+            state.markerEditBox.setWidth(sw - (int)(20 * viewport.zoom));
+
+            if (state.markerEditBox.mouseClicked(mouseX, mouseY, button)) {
+                return true;
             }
+
+            // If clicked outside the node area, finish editing
+            double worldMouseX = state.viewport.toWorldX(mouseX);
+            double worldMouseY = state.viewport.toWorldY(mouseY);
+            if (!(worldMouseX >= node.x && worldMouseX <= node.x + node.width && worldMouseY >= node.y && worldMouseY <= node.y + node.height)) {
+                finishMarkerEditing();
+                return false; // Let the click pass through to potentially select other things
+            }
+            return true; // Clicked inside node but not in editbox, still block
         }
 
         // Block all blueprint interactions if clicking the top bar
@@ -305,6 +324,9 @@ public class BlueprintEventHandler {
         }
 
         if (state.readOnly) return false;
+        if (state.showNodeMenu) {
+            return state.menu.keyPressed(keyCode, scanCode, modifiers);
+        }
         return nodeHandler.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -323,9 +345,10 @@ public class BlueprintEventHandler {
 
         if (state.editingMarkerNode != null && state.markerEditBox != null) {
             boolean handled = state.markerEditBox.charTyped(codePoint, modifiers);
-            if (handled) {
+            if (handled || state.markerEditBox.isFocused()) {
                 state.editingMarkerNode.inputValues.addProperty(ltd.opens.mg.mc.core.blueprint.NodePorts.COMMENT, state.markerEditBox.getValue());
                 state.editingMarkerNode.setSizeDirty(true);
+                return true;
             }
             return handled;
         }

@@ -89,6 +89,11 @@ public class BlueprintMenuInputHandler {
 
         // Forward click to EditBox
         if (menu.getSearchEditBox() != null) {
+            // Position it before clicking
+            menu.getSearchEditBox().setX(x + 8);
+            menu.getSearchEditBox().setY((int)menuY + (25 - 9) / 2);
+            menu.getSearchEditBox().setWidth(width - 16);
+            
             if (menu.getSearchEditBox().mouseClicked(mouseX, mouseY, button)) {
                 return null;
             }
