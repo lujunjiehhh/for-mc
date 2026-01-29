@@ -101,9 +101,6 @@ public class NetworkService {
      * 统一发送自定义载荷数据包
      */
     private void sendPacket(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundCustomPayloadPacket(payload));
-        }
+        ltd.opens.mg.mc.network.MGMCNetwork.sendToServer(payload);
     }
 }

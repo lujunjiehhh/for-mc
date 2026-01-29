@@ -18,7 +18,7 @@ public record ImportBlueprintPayload(String name, String data, Map<String, Set<S
     public static final StreamCodec<FriendlyByteBuf, ImportBlueprintPayload> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.STRING_UTF8,
         ImportBlueprintPayload::name,
-        ByteBufCodecs.STRING_UTF8,
+        ByteBufCodecs.stringUtf8(1048576),
         ImportBlueprintPayload::data,
         ByteBufCodecs.map(HashMap::new, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8)),
         ImportBlueprintPayload::mappings,
